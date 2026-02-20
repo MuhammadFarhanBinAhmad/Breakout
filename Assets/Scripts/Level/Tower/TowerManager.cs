@@ -1,0 +1,189 @@
+using System;
+using UnityEngine;
+
+public class TowerManager : MonoBehaviour
+{
+
+    TimeManager _timeManager;
+
+    public GameObject _collectedBrick;
+
+    [Header("Essence")]
+    [Tooltip("Starting threshold of essence required to trigger an OnEssenceCollect.")]
+    public int _initialEssenceThreshold = 5;
+    [Tooltip("Current threshold; starts at initial and is increased on milestones.")]
+    public int _essenceThreshold;
+    public int _totalEssenceCollected;
+    public int _currentEssenceCount;
+    public int _currentPureEssence;
+    public Action OnEssenceCollect;
+
+    [Header("Essence scaling (milestones)")]
+    public TWEENTYPE _essenceTweenType = TWEENTYPE.LINEAR;
+    [Tooltip("How many floors make 1 milestone (default 5).")]
+    public int milestoneFloors = 5;
+    [Tooltip("Base increase applied each milestone (multiplied by eased progress).")]
+    public int _essenceIncreaseBase = 2;
+
+    [Header("Brick")]
+    public int _totalBrickCount;
+    public int _brickThreshold;
+    int _currentBrickCount;
+    public Action OnBrickIncrease;
+    public Action OnBrickDecrease;
+    public Vector2 _posOffset;
+
+    [Header("Layer")]
+    public int _currentTowerHeight;
+    public Action OnHeightIncrease;
+
+    [Header("MonthlyCheck")]
+    public int[] _towerHeightCheck;
+    bool _receiveWarning;
+
+
+    void Awake()
+    {
+        _timeManager = FindAnyObjectByType<TimeManager>();
+        _essenceThreshold = _initialEssenceThreshold;
+
+    }
+    private void Start()
+    {
+        // subscribe to month pass if TimeManager exposes this
+        if (_timeManager != null)
+            _timeManager._weekPass += EndOfWeekCheck;
+
+        OnEssenceCollect += IncreaseBrickCount;
+        OnHeightIncrease += CreateNewFloor;
+    }
+    private void OnDisable()
+    {
+        _timeManager._weekPass -= EndOfWeekCheck;
+        OnEssenceCollect -= IncreaseBrickCount;
+        OnHeightIncrease -= CreateNewFloor;
+    }
+
+    public void IncreaseEssenceCount(int amt)
+    {
+        _currentEssenceCount += amt;
+
+        if (_currentEssenceCount >= _essenceThreshold)
+        {
+            _currentEssenceCount = 0;
+            OnEssenceCollect?.Invoke();
+            _totalEssenceCollected += _essenceThreshold;
+        }
+    }
+    public void IncreaseBrickCount()
+    {
+        _totalBrickCount++;
+        _currentBrickCount++;
+        _currentPureEssence++;
+        OnBrickIncrease?.Invoke();
+
+        if (_currentBrickCount >= _brickThreshold)
+        {
+            _currentBrickCount = 0;
+            _currentTowerHeight++;
+
+            // Apply milestone logic: every milestoneFloors floors, increase essence threshold
+            if (milestoneFloors > 0 && _currentTowerHeight % milestoneFloors == 0)
+            {
+                ApplyEssenceMilestoneIncrease();
+            }
+
+            OnHeightIncrease?.Invoke();
+        }
+
+        GameObject brick = Instantiate(_collectedBrick);
+        Vector3 pos = new Vector2(transform.position.x + (_posOffset.x * _currentBrickCount), transform.position.y);
+        brick.transform.position = pos;
+    }
+
+    void ApplyEssenceMilestoneIncrease()
+    {
+        // compute which milestone we are at (1-based)
+        int milestoneIndex = Mathf.FloorToInt((float)_currentTowerHeight / milestoneFloors);
+
+        // use TimeManager's max month as a normaliser to build progress for the easing curve
+        int maxPhases;
+        maxPhases = _timeManager.GetMaxWeek();
+
+        // progress in [0,1] = milestoneIndex / maxPhases (clamped)
+        float progress = (float)milestoneIndex / (float)maxPhases;
+        progress = Mathf.Clamp01(progress);
+
+        float eased = GetEased(progress, _essenceTweenType);
+
+        // compute increase (at least 1)
+        int increase = Mathf.Max(1, Mathf.RoundToInt(_essenceIncreaseBase * eased));
+
+        _essenceThreshold += increase;
+
+    }
+
+    void CreateNewFloor()
+    {
+        transform.position = new Vector2(transform.position.x, transform.position.y - (_posOffset.y * _currentTowerHeight));
+    }
+    public void EndOfWeekCheck()
+    {
+        if(_currentTowerHeight >= _towerHeightCheck[_timeManager.GetCurrentWeek()])
+        {
+            print("pass");
+        }
+        else
+        {
+            if (!_receiveWarning)
+                _receiveWarning = true;
+            else
+                print("fail");
+        }
+    }
+
+    float GetEased(float t, TWEENTYPE type)
+    {
+        t = Mathf.Clamp01(t);
+        switch (type)
+        {
+            case TWEENTYPE.LINEAR:
+                return Linear(t);
+            case TWEENTYPE.SINE:
+                return Sine(t);
+            case TWEENTYPE.EXPO:
+                return Expo(t);
+            case TWEENTYPE.QUAD:
+                return Quad(t);
+            case TWEENTYPE.NONE:
+            default:
+                return Linear(t);
+        }
+    }
+
+    float Linear(float t) => Mathf.Clamp01(t);
+
+    float Quad(float t)
+    {
+        t = Mathf.Clamp01(t);
+        if (t < 0.5f) return 2f * t * t;
+        else return -2f * t * t + 4f * t - 1f;
+    }
+
+    float Sine(float t)
+    {
+        t = Mathf.Clamp01(t);
+        return 0.5f - 0.5f * Mathf.Cos(Mathf.PI * t);
+    }
+
+    float Expo(float t)
+    {
+        t = Mathf.Clamp01(t);
+        if (t == 0f) return 0f;
+        if (t == 1f) return 1f;
+        if (t < 0.5f)
+            return 0.5f * Mathf.Pow(2f, (20f * t) - 10f);
+        else
+            return 1f - 0.5f * Mathf.Pow(2f, (-20f * t) + 10f);
+    }
+}

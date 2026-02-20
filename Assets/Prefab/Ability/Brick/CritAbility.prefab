@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &5621834340312411328
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3753359941288386988}
+  - component: {fileID: 1613487609434907534}
+  m_Layer: 0
+  m_Name: CritAbility
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3753359941288386988
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5621834340312411328}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -3.54494, y: -22.34401, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1613487609434907534
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5621834340312411328}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28c2238df89fb46439a05e0c8bb7741f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CritAbility
+  _SOAbilityEffect: {fileID: 11400000, guid: e36b15acbc52c134480959c4a5ac328f, type: 2}
+  _ABSAddOnAbilityList: []
+  _AbilityStatRuntime:
+  - definition: {fileID: 11400000, guid: 2ea4eb7bcb55e60408219fdb5097d707, type: 2}
+    level: 0
+  - definition: {fileID: 11400000, guid: 15be68ffbaada01489b938168ebbc27e, type: 2}
+    level: 0
+  test: {fileID: 0}
