@@ -8,10 +8,13 @@ public class Ball : MonoBehaviour
     SpriteRenderer _spriteRenderer;
     AbilityManager _abilityManager;
     BrickPool _brickPool;
+    GlobalFeedbackManager _globalFeedbackManager;
+    BallFeedbackManager _ballFeedbackManager;
 
     public float _gravityScale;
     public float _maxVelocity;
 
+    public Action OnBallHit;
     public Action OnBallReset;
     public Action OnBrickHit;
 
@@ -56,8 +59,14 @@ public class Ball : MonoBehaviour
     [Tooltip("Normal drag when not being attracted.")]
     [SerializeField] float normalDrag = 1f;
 
-    // store last pull applied (optional)
+    // rotation while attracted: how fast the ball turns toward the attractor
+    [Tooltip("How quickly the ball rotates to face the attractor (higher = faster).")]
+    [SerializeField] float _attractRotationSpeed = 5f; // tweak in Inspector
+    Vector2 _attractDesiredDir = Vector2.up;
     Vector2 lastPullApplied = Vector2.zero;
+
+
+
 
     // -------------------------
     // Push lock (prevents immediate re-attraction)
@@ -70,8 +79,11 @@ public class Ball : MonoBehaviour
         _spriteRenderer = GetComponent<SpriteRenderer>();
         _abilityManager = FindAnyObjectByType<AbilityManager>();
         _brickPool = FindAnyObjectByType<BrickPool>();
+        _globalFeedbackManager = FindAnyObjectByType<GlobalFeedbackManager>();
+        _ballFeedbackManager = FindAnyObjectByType<BallFeedbackManager>();
 
         OnBrickHit += IncreaseCombo;
+        OnBrickHit += _ballFeedbackManager.UpdateGlowIntensity;
 
         OnBallReset += ResetCombo;
         OnBallReset += ResetPosition;
@@ -85,6 +97,7 @@ public class Ball : MonoBehaviour
     private void OnDisable()
     {
         OnBrickHit -= IncreaseCombo;
+        OnBrickHit -= _ballFeedbackManager.UpdateGlowIntensity;
 
         OnBallReset -= ResetCombo;
         OnBallReset -= ResetPosition;
@@ -127,10 +140,22 @@ public class Ball : MonoBehaviour
             return;
         }
 
+        // --- rotate slowly toward attractor direction ---
+        Vector2 desiredDir = to.normalized;
+        _attractDesiredDir = desiredDir; // cache (also updated by UpdateAttractionTarget)
+        float rotT = Mathf.Clamp01(_attractRotationSpeed * Time.fixedDeltaTime);
+        // Slerp the transform.up vector toward desired direction (2D)
+        Vector3 currentUp = transform.up;
+        Vector3 desiredUp = new Vector3(desiredDir.x, desiredDir.y, 0f);
+        Vector3 newUp = Vector3.Slerp(currentUp, desiredUp, rotT).normalized;
+        if (newUp.sqrMagnitude > 0.0001f)
+            transform.up = newUp;
+
+        // --- compute attraction force as before ---
         float t = Mathf.Clamp01(1f - (dist / attractRadius)); // 0 far, 1 near
         float pull = attractStrength * (t * 0.9f + 0.1f); // never completely zero
 
-        Vector2 forceVec = to.normalized * pull;
+        Vector2 forceVec = desiredDir * pull;
 
         // clamp force magnitude per FixedUpdate to the configured cap
         if (attractForceCap > 0f)
@@ -157,11 +182,26 @@ public class Ball : MonoBehaviour
         attractForceCap = Mathf.Max(0f, maxForce);
         isAttracted = true;
         _rigRigidbody.linearDamping = attractedDrag;
+
+        // set initial desired direction and nudge rotation a tiny bit toward it (so rotation begins immediately)
+        Vector2 initialTo = attractorPos - (Vector2)transform.position;
+        if (initialTo.sqrMagnitude > 0.0001f)
+        {
+            _attractDesiredDir = initialTo.normalized;
+            float initT = Mathf.Clamp01(_attractRotationSpeed * Time.deltaTime);
+            Vector3 newUp = Vector3.Slerp(transform.up, new Vector3(_attractDesiredDir.x, _attractDesiredDir.y, 0f), initT).normalized;
+            if (newUp.sqrMagnitude > 0.0001f)
+                transform.up = newUp;
+        }
     }
 
     public void UpdateAttractionTarget(Vector2 targetPosition)
     {
         attractorPos = targetPosition;
+        // also update desired direction so rotation continues to track moving targets
+        Vector2 to = attractorPos - (Vector2)transform.position;
+        if (to.sqrMagnitude > 0.0001f)
+            _attractDesiredDir = to.normalized;
     }
 
     public void StopAttraction()
@@ -262,20 +302,45 @@ public class Ball : MonoBehaviour
         _particleTrail.SetActive(false);
     }
 
+    
+
     private void OnCollisionEnter2D(Collision2D other)
     {
-        if (other.gameObject.GetComponent<BrickBar>() != null)
-        {
-            if (_copyBall)
-            {
-                _currentBounce++;
-                if (_currentBounce > _maxBounce)
-                    Destroy(gameObject);
-            }
-            _currentDelayTime = _delayTimeAfterHit;
 
-            OnBrickHit?.Invoke();
-            _abilityManager.NotifyBrickHit(other.gameObject.GetComponent<BrickBar>(), (_baseDamage + _damageValueModifier));
+        
+        if (other.gameObject.CompareTag("Wall") || other.gameObject.CompareTag("Paddle") || other.gameObject.CompareTag("Brick"))
+        {
+            _globalFeedbackManager.PlayGlobalFeedback?.Invoke();
+            OnBallHit?.Invoke();
+
+            Vector2 avgNormal = Vector2.zero;
+            int contacts = Mathf.Max(1, other.contactCount);
+            for (int i = 0; i < other.contactCount; i++)
+            {
+                avgNormal += other.GetContact(i).normal;
+            }
+            avgNormal /= contacts;
+
+            if (avgNormal.sqrMagnitude > 0.0001f)
+                avgNormal.Normalize();
+            else
+                avgNormal = Vector2.up; // fallback
+
+            Vector2 opposite = -avgNormal;
+            transform.up = opposite;
+            if (other.gameObject.GetComponent<BrickBar>() != null)
+            {
+                if (_copyBall)
+                {
+                    _currentBounce++;
+                    if (_currentBounce > _maxBounce)
+                        Destroy(gameObject);
+                }
+                _currentDelayTime = _delayTimeAfterHit;
+
+                OnBrickHit?.Invoke();
+                _abilityManager.NotifyBrickHit(other.gameObject.GetComponent<BrickBar>(), (_baseDamage + _damageValueModifier));
+            }
         }
     }
 }

@@ -6,6 +6,7 @@ public class TowerManager : MonoBehaviour
 
     TimeManager _timeManager;
 
+
     public GameObject _collectedBrick;
 
     [Header("Essence")]
@@ -38,6 +39,10 @@ public class TowerManager : MonoBehaviour
     public Action OnHeightIncrease;
 
     [Header("MonthlyCheck")]
+    public TWEENTYPE _towerTweenType = TWEENTYPE.LINEAR;
+    public Action _OnGameOver;
+    [SerializeField] int _startTowerHeightCheck, _endTowerHeightCheck;
+    [SerializeField] int _totalTowerHeightCheck;
     public int[] _towerHeightCheck;
     bool _receiveWarning;
 
@@ -56,7 +61,16 @@ public class TowerManager : MonoBehaviour
 
         OnEssenceCollect += IncreaseBrickCount;
         OnHeightIncrease += CreateNewFloor;
+
+        PopulateTowerHeightCheck();
     }
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        // ensure array is updated in editor without entering playmode
+        PopulateTowerHeightCheck();
+    }
+#endif
     private void OnDisable()
     {
         _timeManager._weekPass -= EndOfWeekCheck;
@@ -71,9 +85,9 @@ public class TowerManager : MonoBehaviour
         if (_currentEssenceCount >= _essenceThreshold)
         {
             _currentEssenceCount = 0;
-            OnEssenceCollect?.Invoke();
             _totalEssenceCollected += _essenceThreshold;
         }
+        OnEssenceCollect?.Invoke();
     }
     public void IncreaseBrickCount()
     {
@@ -138,7 +152,37 @@ public class TowerManager : MonoBehaviour
             if (!_receiveWarning)
                 _receiveWarning = true;
             else
+            {
+                _OnGameOver?.Invoke();
+                TimeManager.StopTime();
                 print("fail");
+            }
+        }
+    }
+    void PopulateTowerHeightCheck()
+    {
+        if (_totalTowerHeightCheck <= 0)
+        {
+            _towerHeightCheck = new int[0];
+            return;
+        }
+
+        _towerHeightCheck = new int[_totalTowerHeightCheck];
+
+        // if only one sample, use start value
+        if (_totalTowerHeightCheck == 1)
+        {
+            _towerHeightCheck[0] = _startTowerHeightCheck;
+            return;
+        }
+
+        int steps = _totalTowerHeightCheck - 1; // denom so last element = end value
+        for (int i = 0; i < _totalTowerHeightCheck; i++)
+        {
+            float t = (float)i / (float)steps;               // normalized [0,1]
+            float eased = GetEased(t, _towerTweenType);      // apply chosen easing
+            float val = Mathf.Lerp(_startTowerHeightCheck, _endTowerHeightCheck, eased);
+            _towerHeightCheck[i] = Mathf.RoundToInt(val);    // integer thresholds
         }
     }
 

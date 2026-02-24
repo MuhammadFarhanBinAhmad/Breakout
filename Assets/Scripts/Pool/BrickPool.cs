@@ -11,7 +11,7 @@ public class BrickPool : MonoBehaviour
 
     [SerializeField]int _brickToSpawn;
 
-    private void OnEnable()
+    private void Awake()
     {
         SpawnBrick();
     }
@@ -60,6 +60,7 @@ public class BrickPool : MonoBehaviour
     }
     public void PlaceActiveBrickInList(GameObject brick) => _activeBrick.Add(brick);
     public void RemoveActiveBrick(GameObject brick) => _activeBrick.Remove(brick);
+    public List<GameObject> GetListOfBrick() => _brickPool;
     public List<GameObject> GetListOfActiveBrick() => _activeBrick;
 
 }

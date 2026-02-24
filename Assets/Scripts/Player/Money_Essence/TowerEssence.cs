@@ -2,6 +2,7 @@ using Cinemachine.Utility;
 using System;
 using UnityEngine;
 using UnityEngine.Jobs;
+using UnityEngine.Rendering.Universal;
 
 public class TowerEssence : MonoBehaviour
 {
@@ -16,10 +17,16 @@ public class TowerEssence : MonoBehaviour
     int _currentExpirationPhase;
     [SerializeField] float[] _essenceExpirationTime;
     [SerializeField] float _essenceCurrentLiveTime;
+    [Header("Light")]
+    [SerializeField] Light2D _light2D;
+    [SerializeField] float _startIntensity, _endIntensity;
+    float intensityTimer = 0f;
+    bool intensityDone = false;
+    [SerializeField] float intensityDuration = 3f;
 
     [Header("Physics / Movement")]
-    Rigidbody2D rb;
     public float maxSpeed;
+    Rigidbody2D rb;
     [Tooltip("Use this to smooth motion while being attracted (lower = more drag).")]
     public float attractedDrag;
     [Tooltip("Normal drag when not being attracted.")]
@@ -65,6 +72,9 @@ public class TowerEssence : MonoBehaviour
         Vector3 dir = UnityEngine.Random.onUnitSphere; // uniform random direction
         float mag = UnityEngine.Random.Range(minImpulse, maxImpulse);
         rb.AddForce(dir * mag, ForceMode2D.Impulse);
+        intensityTimer = 0f;
+        intensityDone = false;
+        _light2D.intensity = _startIntensity;
     }
     private void OnDisable()
     {
@@ -74,6 +84,19 @@ public class TowerEssence : MonoBehaviour
     {
         if (gameObject.activeSelf)
         {
+            if (!intensityDone)
+            {
+                intensityTimer += Time.fixedDeltaTime;
+                float time = Mathf.Clamp01(intensityTimer / intensityDuration);
+
+                _light2D.intensity = Mathf.Lerp(_startIntensity, _endIntensity, time);
+
+                if (time >= 1f)
+                {
+                    intensityDone = true; // stop decreasing forever
+                }
+            }
+
             _essenceCurrentLiveTime += Time.deltaTime;
             if (_essenceCurrentLiveTime > _essenceExpirationTime[_currentExpirationPhase] && _currentExpirationPhase < _essenceExpirationTime.Length - 1)
             {

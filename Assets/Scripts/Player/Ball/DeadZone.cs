@@ -2,11 +2,14 @@ using UnityEngine;
 
 public class DeadZone : MonoBehaviour
 {
+    public GameObject _deathVFX;
+
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.GetComponent<Ball>() != null)
         {
             Ball ball = other.GetComponent<Ball>();
+            _deathVFX.SetActive(true);
             ball.OnBallReset?.Invoke();
         }
         if(other.GetComponent<PaddleHealth>() != null)
