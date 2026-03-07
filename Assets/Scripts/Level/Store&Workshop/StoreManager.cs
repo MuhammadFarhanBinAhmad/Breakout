@@ -53,7 +53,7 @@ public class StoreManager : MonoBehaviour
             float t = (count == 1) ? 1f : (float)i / (count - 1);
 
             // Apply your easing curve
-            float easedT = GetEased(t);
+            float easedT = TweenService.GetEased(t,_growthType);
 
             // Convert eased value into a cost
             int cost = Mathf.RoundToInt(
@@ -86,53 +86,6 @@ public class StoreManager : MonoBehaviour
             _storeIsOpen = false;
             OnStoreClose?.Invoke();
             print("StoreClose");
-        }
-    }
-    float GetEased(float t)
-    {
-        t = Mathf.Clamp01(t);
-        switch (_growthType)
-        {
-            case TWEENTYPE.LINEAR:
-                return Linear(t);
-            case TWEENTYPE.SINE:
-                return Sine(t);
-            case TWEENTYPE.EXPO:
-                return Expo(t);
-            case TWEENTYPE.QUAD:
-                return Quad(t);
-            case TWEENTYPE.NONE:
-            default:
-                return Linear(t); // treat NONE as linear by default
-        }
-        float Linear(float tt)
-        {
-            return Mathf.Clamp01(tt);
-        }
-        float Quad(float tt)
-        {
-            tt = Mathf.Clamp01(tt);
-            if (tt < 0.5f)
-                return 2f * tt * tt;
-            else
-                return -2f * tt * tt + 4f * tt - 1f;
-        }
-        float Sine(float tt)
-        {
-            tt = Mathf.Clamp01(tt);
-            return 0.5f - 0.5f * Mathf.Cos(Mathf.PI * tt);
-        }
-        float Expo(float tt)
-        {
-            tt = Mathf.Clamp01(tt);
-
-            if (tt == 0f) return 0f;
-            if (tt == 1f) return 1f;
-
-            if (tt < 0.5f)
-                return 0.5f * Mathf.Pow(2f, (20f * tt) - 10f);
-            else
-                return 1f - 0.5f * Mathf.Pow(2f, (-20f * tt) + 10f);
         }
     }
 }

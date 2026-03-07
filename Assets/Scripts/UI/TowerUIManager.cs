@@ -24,6 +24,7 @@ public class TowerUIManager : MonoBehaviour
         _towerManager.OnEssenceCollect += UpdateEssenceUI;
         _towerManager._OnGameOver += GameOverScreen;
         UpdateTowerUI();
+        UpdateEssenceUI();
     }
     private void OnDisable()
     {
@@ -40,6 +41,6 @@ public class TowerUIManager : MonoBehaviour
     {
         _currentEssenceText.text = "Essence: " + _towerManager._currentEssenceCount.ToString() + " / " +
                                     _towerManager._essenceThreshold.ToString();
-        _currentPureEssenceText.text = "PureEssence: " + _towerManager._currentPureEssence.ToString();
+        _currentPureEssenceText.text = "Pure Essence: " + _towerManager._currentPureEssence.ToString();
     }
 }

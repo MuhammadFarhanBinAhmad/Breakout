@@ -25,7 +25,8 @@ public class AbilityTypeThresholdCounter
 
 public class AbilityManager : MonoBehaviour
 {
-    public List<ActiveAbility> _activeAbilities = new List<ActiveAbility>();
+    public List<ActiveAbility> _brickAbilities = new List<ActiveAbility>();
+    public List<ActiveAbility> _ballAbilities = new List<ActiveAbility>();
 
     int _currentTotalBrickAbility,_currentTotalBallAbility,_currentBrickAbilityTier;
     int _currentMaxBrickAbility = 1;
@@ -73,13 +74,13 @@ public class AbilityManager : MonoBehaviour
         ability.OnAdded(this);
 
         ActiveAbility activeAbility = new ActiveAbility(ability, 1);
-        _activeAbilities.Add(activeAbility);
+        _brickAbilities.Add(activeAbility);
 
         return activeAbility;
     }
     public void RemoveAbility(ActiveAbility activeAbility)
     {
-        if (_activeAbilities.Remove(activeAbility))
+        if (_brickAbilities.Remove(activeAbility))
         {
             Destroy(activeAbility.ability.gameObject);
         }
@@ -98,31 +99,31 @@ public class AbilityManager : MonoBehaviour
         };
 
         // Phase 1: Modifer
-        foreach (var active in _activeAbilities)
+        foreach (var active in _brickAbilities)
             active.ability.ModifyHit(ctx);
 
         // Phase 2: On hit
-        foreach (var active in _activeAbilities)
+        foreach (var active in _brickAbilities)
             active.ability.OnHit(ctx);
 
         // Phase 3: Apply damage
         brick.OnDamage(ctx._finaleDamage);
 
         // Phase 3: Notify abilities of outcome
-        foreach (var active in _activeAbilities)
+        foreach (var active in _brickAbilities)
             active.ability.OnHitResolved(ctx);
     }
 
     public void NotifyBrickDestroyed(BrickBar brick)
     {
-        foreach (var active in _activeAbilities)
+        foreach (var active in _brickAbilities)
         {
             active.ability.OnBrickDestroy(brick);
         }
     }
     public void NotifyBallDestroyed(Ball ball)
     {
-        foreach (var active in _activeAbilities)
+        foreach (var active in _brickAbilities)
         {
             active.ability.OnBallDestroy(ball);
         }
@@ -138,7 +139,7 @@ public class AbilityManager : MonoBehaviour
         {
             _tickTimer -= 1f;
 
-            foreach (var active in _activeAbilities)
+            foreach (var active in _brickAbilities)
             {
                 active.ability.OnTick(1f);
             }

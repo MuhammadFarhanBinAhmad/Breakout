@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using TMPro.EditorUtilities;
 using UnityEngine;
 using UnityEngine.Experimental.GlobalIllumination;
 using UnityEngine.Rendering;
@@ -29,15 +30,15 @@ public class BrickBar : MonoBehaviour
     Dictionary<StatusType, StatusInstance> _statuses = new Dictionary<StatusType, StatusInstance>();
     List<StatusType> toRemove = new List<StatusType>();
 
+    public List<BrickModifierBase> _modifiers = new List<BrickModifierBase>();
+
     BrickPool _brickPool;
     EssencePool _essencePool;
 
     BrickGenerator _brickGenerator;
     TowerManager _towerManager;
     AbilityManager abilityManager;
-    MoneyManager _moneyManager;
     //UIManager
-    MoneyUIManager _moneyUIManager;
 
     SpriteRenderer _spriteRenderer;
 
@@ -66,8 +67,6 @@ public class BrickBar : MonoBehaviour
         _brickGenerator = FindAnyObjectByType<BrickGenerator>();
         abilityManager = FindAnyObjectByType<AbilityManager>();
         _towerManager = FindAnyObjectByType<TowerManager>();
-        _moneyManager = FindAnyObjectByType<MoneyManager>();
-        _moneyUIManager = FindAnyObjectByType<MoneyUIManager>();
 
         foreach (Transform child in transform)
         {
@@ -80,23 +79,26 @@ public class BrickBar : MonoBehaviour
         _essencePool = FindAnyObjectByType<EssencePool>();
 
         _onDeath += HandleDeath;
-        _onDeath += _moneyUIManager.UpdateMoneyUI;
 
         _onDeathByPaddle += HandleDeathByPaddle;
     }
     private void OnDestroy()
     {
         _onDeath -= HandleDeath;
-        _onDeath -= _moneyUIManager.UpdateMoneyUI;
 
         _onDeathByPaddle -= HandleDeathByPaddle;
     }
 
     private void Update()
     {
+        float dt = Time.deltaTime;
         transform.Translate(Vector3.down * _fallSpeed * Time.deltaTime);
+
         if (_health > 0)
             ExecuteStatusEffect();
+
+        TickModifiers(dt);
+
 
         if (pendingDeath)
             _onDeath?.Invoke();
@@ -150,7 +152,22 @@ public class BrickBar : MonoBehaviour
     }
     public void OnDamage(int dmg)
     {
-        _health -= dmg;
+        int modified = dmg;
+        for (int i = 0; i < _modifiers.Count; i++)
+        {
+            if (_modifiers[i] != null)
+                modified = _modifiers[i].ModifyIncomingDamage(modified);
+        }
+
+        //For Hit shield effect
+        if (modified <= 0)
+            return;
+
+        _health -= modified;
+
+        for (int i = 0; i < _modifiers.Count; i++)
+            _modifiers[i]?.OnDamageApplied(modified);
+
         if (_health <= 0)
         {
             pendingDeath = true;
@@ -164,9 +181,10 @@ public class BrickBar : MonoBehaviour
     void HandleDeath()
     {
         _statuses.Clear();
+        RemoveAllModifiers();
+
         abilityManager.NotifyBrickDestroyed(this);
         _brickGenerator.OnBrickDestroyed();
-        _moneyManager.CalculateBrickValue(this);
         _brickPool.RemoveActiveBrick(this.gameObject);
         SpawnEssence();
         Instantiate(_destroyParticleEffect, transform.position, Quaternion.identity);
@@ -178,6 +196,8 @@ public class BrickBar : MonoBehaviour
     void HandleDeathByPaddle()
     {
         _statuses.Clear();
+        RemoveAllModifiers();
+
         abilityManager.NotifyBrickDestroyed(this);
         _brickGenerator.OnBrickDestroyed();
         _brickPool.RemoveActiveBrick(this.gameObject);
@@ -249,4 +269,52 @@ public class BrickBar : MonoBehaviour
         for(int i=0; i< _spritesRenderer.Count; i++)
             _spritesRenderer[i].color = color;
     }
+    public void SetBrick(SO_BrickHealthStats _stats)
+    {
+        _startingHealth = _stats._health;
+        _health = _stats._health;
+        _fallSpeed = _stats._dropSpeed;
+        ChangeSpiteColour(_stats._color);
+    }
+
+    //MODIFIERS
+    public BrickModifierBase AddModifier(BrickModifierBase modifierPrefab)
+    {
+        if (modifierPrefab == null) return null;
+
+        // instantiate as child of the brick (could come from a pool)
+        var instance = Instantiate(modifierPrefab, transform.position, Quaternion.identity);
+        instance.transform.SetParent(transform, false);
+        instance.Initialize(this);
+        _modifiers.Add(instance);
+        return instance;
+    }
+    public void RemoveModifier(BrickModifierBase instance)
+    {
+        if (instance == null) return;
+        if (_modifiers.Contains(instance))
+        {
+            _modifiers.Remove(instance);
+            instance.OnRemove();
+        }
+    }
+    public void RemoveAllModifiers()
+    {
+        // iterate copy to avoid modifying while iterating
+        var copy = new List<BrickModifierBase>(_modifiers);
+        foreach (var m in copy)
+        {
+            RemoveModifier(m);
+        }
+    }
+    void TickModifiers(float dt)
+    {
+        for (int i = _modifiers.Count - 1; i >= 0; i--)
+        {
+            var m = _modifiers[i];
+            if (m != null) m.Tick(dt);
+        }
+    }
+    public void Heal(int amount) => _health = Mathf.Min(_health + amount, _startingHealth);
+
 }

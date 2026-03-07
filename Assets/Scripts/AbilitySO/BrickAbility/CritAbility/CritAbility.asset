@@ -13,13 +13,11 @@ MonoBehaviour:
   m_Name: CritAbility
   m_EditorClassIdentifier: Assembly-CSharp::SOAbilityEffect
   _abilityName: 
-  _abilityType: 0
+  _abilityType: 1
   _isBallAbility: 0
   _isBrickAbility: 1
   _isEnviromentAbility: 0
-  _ballAbilityType: 0
-  _brickAbilityType: 0
-  _environmentAbilityType: 0
+  _brickAbilityType: 1
   _baseDamageMultiplier: 0.2
   _abilityPrefab: {fileID: 5621834340312411328, guid: a67b1dbdb1991f541b6b02cc51811e69, type: 3}
   _applyStatus: 0

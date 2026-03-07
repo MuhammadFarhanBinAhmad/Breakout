@@ -128,7 +128,7 @@ public class TowerManager : MonoBehaviour
         float progress = (float)milestoneIndex / (float)maxPhases;
         progress = Mathf.Clamp01(progress);
 
-        float eased = GetEased(progress, _essenceTweenType);
+        float eased = TweenService.GetEased(progress, _essenceTweenType);
 
         // compute increase (at least 1)
         int increase = Mathf.Max(1, Mathf.RoundToInt(_essenceIncreaseBase * eased));
@@ -180,54 +180,11 @@ public class TowerManager : MonoBehaviour
         for (int i = 0; i < _totalTowerHeightCheck; i++)
         {
             float t = (float)i / (float)steps;               // normalized [0,1]
-            float eased = GetEased(t, _towerTweenType);      // apply chosen easing
+            float eased = TweenService.GetEased(t, _towerTweenType);      // apply chosen easing
             float val = Mathf.Lerp(_startTowerHeightCheck, _endTowerHeightCheck, eased);
             _towerHeightCheck[i] = Mathf.RoundToInt(val);    // integer thresholds
         }
     }
 
-    float GetEased(float t, TWEENTYPE type)
-    {
-        t = Mathf.Clamp01(t);
-        switch (type)
-        {
-            case TWEENTYPE.LINEAR:
-                return Linear(t);
-            case TWEENTYPE.SINE:
-                return Sine(t);
-            case TWEENTYPE.EXPO:
-                return Expo(t);
-            case TWEENTYPE.QUAD:
-                return Quad(t);
-            case TWEENTYPE.NONE:
-            default:
-                return Linear(t);
-        }
-    }
-
-    float Linear(float t) => Mathf.Clamp01(t);
-
-    float Quad(float t)
-    {
-        t = Mathf.Clamp01(t);
-        if (t < 0.5f) return 2f * t * t;
-        else return -2f * t * t + 4f * t - 1f;
-    }
-
-    float Sine(float t)
-    {
-        t = Mathf.Clamp01(t);
-        return 0.5f - 0.5f * Mathf.Cos(Mathf.PI * t);
-    }
-
-    float Expo(float t)
-    {
-        t = Mathf.Clamp01(t);
-        if (t == 0f) return 0f;
-        if (t == 1f) return 1f;
-        if (t < 0.5f)
-            return 0.5f * Mathf.Pow(2f, (20f * t) - 10f);
-        else
-            return 1f - 0.5f * Mathf.Pow(2f, (-20f * t) + 10f);
-    }
+    
 }

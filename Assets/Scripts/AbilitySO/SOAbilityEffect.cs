@@ -16,14 +16,6 @@ public enum BRICKABILITYTYPE
     LIGHTNING
 }
 
-public enum BALLABILITYTYPE
-{
-    NONE
-}
-public enum ENVIROMENTABILITYTYPE
-{
-    NONE
-}
 
 public enum UPGRADETARGET
 {
@@ -48,14 +40,9 @@ public class SOAbilityEffect : ScriptableObject
     public bool _isBrickAbility;
     public bool _isEnviromentAbility;
 
-    [GroupUnder(nameof(_isBallAbility))]
-    public BALLABILITYTYPE _ballAbilityType;
-
     [GroupUnder(nameof(_isBrickAbility))]
     public BRICKABILITYTYPE _brickAbilityType;
 
-    [GroupUnder(nameof(_isEnviromentAbility))]
-    public ENVIROMENTABILITYTYPE _environmentAbilityType;
 
     [Header("BasicUpgrade")]
     public float _baseDamageMultiplier;
