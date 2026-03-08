@@ -356,8 +356,6 @@ public class Ball : MonoBehaviour
     }
     private void OnCollisionEnter2D(Collision2D other)
     {
-
-        
         if (other.gameObject.CompareTag("Wall") || other.gameObject.CompareTag("Paddle") || other.gameObject.CompareTag("Brick"))
         {
             _globalFeedbackManager.PlayGlobalFeedback?.Invoke();
@@ -393,4 +391,6 @@ public class Ball : MonoBehaviour
             }
         }
     }
+    //HELPER
+    public int GetBallBaseDamage() => _baseDamage;
 }

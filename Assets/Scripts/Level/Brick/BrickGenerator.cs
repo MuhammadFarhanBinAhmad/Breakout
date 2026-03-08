@@ -162,7 +162,6 @@ public class BrickGenerator : MonoBehaviour
             {
                 if (_currentWaveAP <= 0)
                 {
-                    print("out of ap");
                     break;
                 }
                 GameObject brick = _brickPool.GetBrick();
@@ -221,7 +220,6 @@ public class BrickGenerator : MonoBehaviour
         // SAFETY CHECK
         if (bhs.Count == 0)
         {
-            Debug.LogWarning("No bricks available for current AP!");
             return;
         }
 
@@ -230,9 +228,8 @@ public class BrickGenerator : MonoBehaviour
         SO_BrickHealthStats stats = bhs[type];
 
         _bb.SetBrick(stats);
-        _bb.AddModifier(_brickModifier[0]);
+        //_bb.AddModifier(_brickModifier[0]);
 
         _currentWaveAP -= stats._APValue;
-        Debug.Log("AP left: " + _currentWaveAP);
     }
 }

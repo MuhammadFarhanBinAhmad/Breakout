@@ -11,8 +11,6 @@ public enum GROWTHMODE
 [System.Serializable]
 public class UpgradeTarget
 {
-    public UPGRADETARGET _statkey;
-    public EASINGTYPE _easingType;
     public bool _subtract;
 
     [Header("Initial values (level 0)")]

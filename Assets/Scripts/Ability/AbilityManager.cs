@@ -3,56 +3,31 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEditor.Playables;
 using UnityEngine;
 
-[System.Serializable]
-public class ActiveAbility
-{
-    public ABSAbility ability;
-    public int level;
-
-    public ActiveAbility(ABSAbility ability, int level = 1)
-    {
-        this.ability = ability;
-        this.level = level;
-    }
-}
-[System.Serializable]
-public class AbilityTypeThresholdCounter
-{
-    public int _abilityLevel;
-    public int _currentAbilityTier;
-}
 
 
 public class AbilityManager : MonoBehaviour
 {
-    public List<ActiveAbility> _brickAbilities = new List<ActiveAbility>();
-    public List<ActiveAbility> _ballAbilities = new List<ActiveAbility>();
+    // now store abilities directly as ABSAbility instances
+    public List<ABSAbility> _brickAbilities = new List<ABSAbility>();
+    public List<ABSAbility> _ballAbilities = new List<ABSAbility>();
 
-    int _currentTotalBrickAbility,_currentTotalBallAbility,_currentBrickAbilityTier;
-    int _currentMaxBrickAbility = 1;
-
-    public bool _brickAbilityPresent, _ballAbilityPresent, _environmentAbilityPresent;
-
-    [Header("Ability threshold and counter")]
-    [Tooltip("0 - Crit" +
-        "1 - Explosive" +
-        "2 - Toxic" +
-        "3 - Lightning")]
-    public AbilityTypeThresholdCounter[] _AbilityTypeThresholdCounter = new AbilityTypeThresholdCounter[4];
-    public int[] _abilityLevelPreRequsite = new int[3];
+    int _currentTotalBrickAbility, _currentTotalBallAbility, _currentBrickAbilityTier;
+    //int _currentMaxBrickAbility = 1;
 
     public List<SOAbilityEffect> test = new List<SOAbilityEffect>();
 
     private void Start()
     {
-        foreach (var ability in test)
+        foreach (var abilitySo in test)
         {
-            AddAbility(ability);
+            AddAbility(abilitySo);
         }
     }
-    
 
-    public ActiveAbility AddAbility(SOAbilityEffect so)
+    /// <summary>
+    /// Add ability from SO. Returns the created ABSAbility instance, or null on failure.
+    /// </summary>
+    public ABSAbility AddAbility(SOAbilityEffect so)
     {
         if (so == null || so._abilityPrefab == null)
         {
@@ -73,18 +48,29 @@ public class AbilityManager : MonoBehaviour
         ability._SOAbilityEffect = so;
         ability.OnAdded(this);
 
-        ActiveAbility activeAbility = new ActiveAbility(ability, 1);
-        _brickAbilities.Add(activeAbility);
+        // store ability directly
+        _brickAbilities.Add(ability);
 
-        return activeAbility;
+        return ability;
     }
-    public void RemoveAbility(ActiveAbility activeAbility)
+
+    /// <summary>
+    /// Remove ability instance. Returns the removed ABSAbility (so caller can inspect), or null if not found.
+    /// </summary>
+    public ABSAbility RemoveAbility(ABSAbility ability)
     {
-        if (_brickAbilities.Remove(activeAbility))
+        if (ability == null)
+            return null;
+
+        if (_brickAbilities.Remove(ability))
         {
-            Destroy(activeAbility.ability.gameObject);
+            Destroy(ability.gameObject);
+            return ability;
         }
+
+        return null;
     }
+
     // „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ Brick Events „Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ„Ÿ
 
     public void NotifyBrickHit(BrickBar brick, int basedmg)
@@ -98,34 +84,35 @@ public class AbilityManager : MonoBehaviour
             _isCrit = false,
         };
 
-        // Phase 1: Modifer
-        foreach (var active in _brickAbilities)
-            active.ability.ModifyHit(ctx);
+        // Phase 1: Modifier
+        foreach (var ability in _brickAbilities)
+            ability.ModifyHit(ctx);
 
         // Phase 2: On hit
-        foreach (var active in _brickAbilities)
-            active.ability.OnHit(ctx);
+        foreach (var ability in _brickAbilities)
+            ability.OnHit(ctx);
 
         // Phase 3: Apply damage
         brick.OnDamage(ctx._finaleDamage);
 
-        // Phase 3: Notify abilities of outcome
-        foreach (var active in _brickAbilities)
-            active.ability.OnHitResolved(ctx);
+        // Phase 4: Notify abilities of outcome
+        foreach (var ability in _brickAbilities)
+            ability.OnHitResolved(ctx);
     }
 
     public void NotifyBrickDestroyed(BrickBar brick)
     {
-        foreach (var active in _brickAbilities)
+        foreach (var ability in _brickAbilities)
         {
-            active.ability.OnBrickDestroy(brick);
+            ability.OnBrickDestroy(brick);
         }
     }
+
     public void NotifyBallDestroyed(Ball ball)
     {
-        foreach (var active in _brickAbilities)
+        foreach (var ability in _brickAbilities)
         {
-            active.ability.OnBallDestroy(ball);
+            ability.OnBallDestroy(ball);
         }
     }
 
@@ -139,106 +126,21 @@ public class AbilityManager : MonoBehaviour
         {
             _tickTimer -= 1f;
 
-            foreach (var active in _brickAbilities)
+            foreach (var ability in _brickAbilities)
             {
-                active.ability.OnTick(1f);
+                ability.OnTick(1f);
             }
         }
     }
 
+
     //----------------ABILITYRELATED----------------//
     public void IncreaseCurrentBrickAbilityAcquired() => _currentTotalBrickAbility++;
-    public void IncreaseCurrentMaxBrickAbility() => _currentMaxBrickAbility++;
+    //public void IncreaseCurrentMaxBrickAbility() => _currentMaxBrickAbility++;
     public void IncreaseCurrentBrickAbilityTierLevel() => _currentBrickAbilityTier++;
 
-    public int GetCurrentMaxBrickAbility() => _currentMaxBrickAbility;
+    //public int GetCurrentMaxBrickAbility() => _currentMaxBrickAbility;
     public int GetCurrentBrickAbilityAcquired() => _currentTotalBrickAbility;
-    public int GetCurrentBrickAbilityTierLevel() => _currentBrickAbilityTier;
 
-    public int GetAbilityLevelIndex(BRICKABILITYTYPE bbt)
-    {
-        switch (bbt)
-        {
-            case BRICKABILITYTYPE.CRIT:
-                return _AbilityTypeThresholdCounter[0]._abilityLevel;
-            case BRICKABILITYTYPE.EXPLOSIVE: 
-                return _AbilityTypeThresholdCounter[1]._abilityLevel;
-            case BRICKABILITYTYPE.TOXIC: 
-                return _AbilityTypeThresholdCounter[2]._abilityLevel;
-            case BRICKABILITYTYPE.LIGHTNING: 
-                return _AbilityTypeThresholdCounter[3]._abilityLevel;
-            default: return 0;
-        }
-    }
-    public int GetAbilityTierLevelIndex(BRICKABILITYTYPE bbt)
-    {
-        switch (bbt)
-        {
-            case BRICKABILITYTYPE.CRIT:
-                return _AbilityTypeThresholdCounter[0]._currentAbilityTier;
-            case BRICKABILITYTYPE.EXPLOSIVE:
-                return _AbilityTypeThresholdCounter[1]._currentAbilityTier;
-            case BRICKABILITYTYPE.TOXIC:
-                return _AbilityTypeThresholdCounter[2]._currentAbilityTier;
-            case BRICKABILITYTYPE.LIGHTNING:
-                return _AbilityTypeThresholdCounter[3]._currentAbilityTier;
-            default: return 0;
-        }
-    }
-    public void UpgradeAbilityTypeLevel(BRICKABILITYTYPE bbt)
-    {
-        switch (bbt)
-        {
-            case BRICKABILITYTYPE.CRIT:
-                {
-                    _AbilityTypeThresholdCounter[0]._abilityLevel++;
-                    break;
-                }
-            case BRICKABILITYTYPE.EXPLOSIVE:
-                {
-                    _AbilityTypeThresholdCounter[1]._abilityLevel++;
-                    break;
-                }
-            case BRICKABILITYTYPE.TOXIC:
-                {
-                    _AbilityTypeThresholdCounter[2]._abilityLevel++;
-                    break;
-                }
-            case BRICKABILITYTYPE.LIGHTNING:
-                {
-                    _AbilityTypeThresholdCounter[3]._abilityLevel++;
-                    break;
-                }
-        }
-    }
-    public void UpgradeAbilityTierLevel(BRICKABILITYTYPE bbt)
-    {
-        switch (bbt)
-        {
-            case BRICKABILITYTYPE.CRIT:
-                {
-                    _AbilityTypeThresholdCounter[0]._currentAbilityTier++;
-                    break;
-                }
-            case BRICKABILITYTYPE.EXPLOSIVE:
-                {
-                    _AbilityTypeThresholdCounter[1]._currentAbilityTier++;
-                    break;
-                }
-            case BRICKABILITYTYPE.TOXIC:
-                {
-                    _AbilityTypeThresholdCounter[2]._currentAbilityTier++;
-                    break;
-                }
-            case BRICKABILITYTYPE.LIGHTNING:
-                {
-                    _AbilityTypeThresholdCounter[3]._currentAbilityTier++;
-                    break;
-                }
-        }
-    }
-
-
-
-
+   
 }

@@ -4,8 +4,8 @@ public class ToxicAbility : ABSAbility
 {
     public override void OnHitResolved(HitContext ctx)
     {
-        var _statusDamage = GetStat(UPGRADETARGET.STATUSDAMAGE).GetValue(UPGRADETARGET.STATUSDAMAGE);
-        var _effectDuration = GetStat(UPGRADETARGET.EFFECTDURATION).GetValue(UPGRADETARGET.EFFECTDURATION);
+        var _statusDamage = _SOAbilityEffect._statusDamage;
+        var _effectDuration = _SOAbilityEffect._effectDuration;
 
         ctx._brick.ApplyStatus(
          StatusType.Poison,

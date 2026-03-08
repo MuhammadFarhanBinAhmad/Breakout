@@ -104,28 +104,14 @@ public class UIStoreManager : AbstractStoreUI
 
         //Ability level requirement
         var type = tree._abilityType;
-        int currentlyTierLevel = _abilityManager.GetAbilityTierLevelIndex(type);
-        int requiredAbilityLevel = _abilityManager._abilityLevelPreRequsite[currentlyTierLevel]; // default fallback
-        if (_abilityManager.GetAbilityLevelIndex(type) < requiredAbilityLevel)
-        {
-            print($"Your ability level is {_abilityManager.GetAbilityLevelIndex(type)}. Upgrade ability to level {requiredAbilityLevel}");
-            return;
-        }
-        //Cost requirement
-        int _abilityCost = _storeManager._brickAbilityCostList[_abilityManager.GetCurrentBrickAbilityTierLevel()];
-        if(_towerManager._currentPureEssence <  _abilityCost)
-        {
-            print($"Your total essence us not enough. Need {_abilityCost - _towerManager._totalEssenceCollected}");
-            return;
-        }
 
-        _towerManager._currentPureEssence -= _abilityCost;
+        //Cost requirement
+
         _towerManager.OnEssenceCollect?.Invoke();
 
         // Perform purchase:
         _abilityManager.AddAbility(so); // instantiate and add ability
-        _abilityManager.UpgradeAbilityTypeLevel(type);
-        _abilityManager.UpgradeAbilityTierLevel(type);
+
         _abilityManager.IncreaseCurrentBrickAbilityAcquired();
         _abilityManager.IncreaseCurrentBrickAbilityTierLevel();
 
@@ -174,18 +160,6 @@ public class UIStoreManager : AbstractStoreUI
         var tree = _abilityContentDetail[treeIndex];
         var so = tree._abilityDetail[tierIndex]._brickAbilityList;
         var type = tree._abilityType;
-
-        // 1) Must be the next tier to buy
-        int currentlyTierLevel = _abilityManager.GetAbilityTierLevelIndex(type);
-        if (tierIndex != currentlyTierLevel)
-        {
-            reason = $"You must buy tier {currentlyTierLevel} first (current owned: {currentlyTierLevel}).";
-            return false;
-        }
-
-
-
-
 
         return true;
     }

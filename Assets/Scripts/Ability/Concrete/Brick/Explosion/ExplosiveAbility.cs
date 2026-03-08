@@ -14,6 +14,9 @@ public class ExplosiveAbility : ABSAbility
     {
         GameObject explosion = _explosionPool.GetExplosion();
         explosion.transform.position = ctx._brick.transform.position;
+        ExplosionDamage ed = explosion.GetComponent<ExplosionDamage>();
+
+        ed.SetDamage((int)_SOAbilityEffect._baseDamageValue);
     }
 
 }

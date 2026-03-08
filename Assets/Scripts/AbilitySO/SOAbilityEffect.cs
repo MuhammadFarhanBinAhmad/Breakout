@@ -2,10 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 public enum ABILITYTYPE
 {
-    NONE,
-    BRICK,
     BALL,
-    ENVIROMENT
+    PASSIVE,
+    ITEM
 }
 public enum BRICKABILITYTYPE
 {
@@ -17,66 +16,41 @@ public enum BRICKABILITYTYPE
 }
 
 
-public enum UPGRADETARGET
-{
-    DAMAGEMULTIPLIER,
-    EFFECTDURATION,
-    STATUSDAMAGE,
-    MAXSTACK,
-    AMOUNTTOSPAWN,
-    CRITCHANCE,
-    CRITMULTIPLIER,
-    VALUECHANGE
-}
-
-
 [CreateAssetMenu(menuName = "Ability/Effect")]
 public class SOAbilityEffect : ScriptableObject
 {
     public string _abilityName;
+
     public ABILITYTYPE _abilityType;
-
-    public bool _isBallAbility;
-    public bool _isBrickAbility;
-    public bool _isEnviromentAbility;
-
-    [GroupUnder(nameof(_isBrickAbility))]
-    public BRICKABILITYTYPE _brickAbilityType;
-
-
-    [Header("BasicUpgrade")]
-    public float _baseDamageMultiplier;
 
 
     [Header("Runtime")]
     public GameObject _abilityPrefab;
+    public List<SOAbilityEffect> _abilitiesChild;
 
+    public bool _genericEffect;
     public bool _applyStatus;
     public bool _spawnEffect;
-    public bool damageModifier;
+    public bool _critEffect;
 
+    [GroupUnder(nameof(_genericEffect))]
+    public float _baseValue;//Value of abiltity effect to change. Be use to replace, add,minus, etc(eg.thershold, combo, etc.)
+    [GroupUnder(nameof(_genericEffect))]
+    public float _baseDamageValue;
+    [GroupUnder(nameof(_genericEffect))]
+    public float _baseDamageMultiplier;//Value of abiltity effect to change. Be use to replace, add,minus,etc. Is multiplier(eg.thershold, base damage, etc.)
+    [GroupUnder(nameof(_genericEffect))]
+    public float _bonusPerFail;
     [GroupUnder(nameof(_applyStatus))]
     public float _effectDuration;
-
     [GroupUnder(nameof(_applyStatus))]
     public int _statusDamage;
-
     [GroupUnder(nameof(_applyStatus))]
     public int _maxStack;
-
-
-
     [GroupUnder(nameof(_spawnEffect))]
     public int _amountToSpawn;
-
-    [GroupUnder(nameof(damageModifier))]
+    [GroupUnder(nameof(_critEffect))]
     public float _baseCritChance;
-
-    [GroupUnder(nameof(damageModifier))]
+    [GroupUnder(nameof(_critEffect))]
     public float _critMultiplier;
-
-    [GroupUnder(nameof(damageModifier))]
-    public float _bonusPerFail;
-
-
 }

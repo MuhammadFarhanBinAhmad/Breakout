@@ -10,25 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: db49deff4a1310443878145d82c40685, type: 3}
-  m_Name: ExplosiveAbility
+  m_Name: SO_MineBombAbility
   m_EditorClassIdentifier: Assembly-CSharp::SOAbilityEffect
   _abilityName: 
-  _abilityType: 1
-  _abilityPrefab: {fileID: 6187691896045833673, guid: 5144710e562cc854cba2230c873eb293, type: 3}
-  _abilitiesChild:
-  - {fileID: 11400000, guid: 5dcb711000751a3419e58d1d7adea391, type: 2}
-  - {fileID: 11400000, guid: 544d11dc0d11e904984711846662c0ba, type: 2}
-  _genericEffect: 1
+  _abilityType: 0
+  _abilityPrefab: {fileID: 4573785603653809155, guid: eaa523c2589ebdf468a4002b707b9522, type: 3}
+  _abilitiesChild: []
+  _genericEffect: 0
   _applyStatus: 0
   _spawnEffect: 1
   _critEffect: 0
   _baseValue: 0
-  _baseDamageValue: 5
+  _baseDamageValue: 0
   _baseDamageMultiplier: 0
   _bonusPerFail: 0
   _effectDuration: 0
   _statusDamage: 0
   _maxStack: 0
-  _amountToSpawn: 0
+  _amountToSpawn: 3
   _baseCritChance: 0
   _critMultiplier: 0

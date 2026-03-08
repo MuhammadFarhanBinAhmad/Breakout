@@ -85,15 +85,16 @@ public class TowerManager : MonoBehaviour
         if (_currentEssenceCount >= _essenceThreshold)
         {
             _currentEssenceCount = 0;
-            _totalEssenceCollected += _essenceThreshold;
+            //_totalEssenceCollected += _essenceThreshold;
+            _totalBrickCount++;
+            _currentBrickCount++;
+            _currentPureEssence++;
         }
         OnEssenceCollect?.Invoke();
     }
     public void IncreaseBrickCount()
     {
-        _totalBrickCount++;
-        _currentBrickCount++;
-        _currentPureEssence++;
+
         OnBrickIncrease?.Invoke();
 
         if (_currentBrickCount >= _brickThreshold)

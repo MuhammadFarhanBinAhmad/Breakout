@@ -10,8 +10,8 @@ public class Consistency : ABSAbility
 
     public override void ModifyHit(HitContext ctx)
     {
-        _baseDamageIncrease = (int)GetStat(UPGRADETARGET.VALUECHANGE).GetValue(UPGRADETARGET.VALUECHANGE);
-        var threshold = GetStat(UPGRADETARGET.VALUECHANGE).GetValue(UPGRADETARGET.VALUECHANGE);
+        _baseDamageIncrease = (int)_SOAbilityEffect._baseDamageValue;
+        var threshold = _SOAbilityEffect._baseValue;
         print("threshold" + threshold);
         ctx._baseDamage += (int)_baseDamageIncrease * Math.Max(1,_currentCombo / (int)threshold);
         print(ctx._baseDamage);

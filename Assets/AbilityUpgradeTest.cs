@@ -19,8 +19,6 @@ public class AbilityUpgradeTest : MonoBehaviour
                 Debug.LogWarning("No ability assigned to upgrade test");
                 return;
             }
-
-            targetAbility.TryUpgradeStat(statIndexToUpgrade);
         }
     }
 }

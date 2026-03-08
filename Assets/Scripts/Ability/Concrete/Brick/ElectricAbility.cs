@@ -4,10 +4,9 @@ public class ElectricAbility : ABSAbility
 {
     public override void OnHitResolved(HitContext ctx)
     {
-        var dmg = GetStat(UPGRADETARGET.STATUSDAMAGE).GetValue(UPGRADETARGET.STATUSDAMAGE);
-        var delay = GetStat(UPGRADETARGET.EFFECTDURATION).GetValue(UPGRADETARGET.EFFECTDURATION);
+        var dmg = _SOAbilityEffect._statusDamage;
+        var delay = _SOAbilityEffect._effectDuration;
 
-        print("Damage: " + dmg);
         ctx._brick.ApplyStatus(
          StatusType.Discharge,
             stacksToAdd: 1,

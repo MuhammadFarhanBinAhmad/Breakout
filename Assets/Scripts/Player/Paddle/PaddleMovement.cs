@@ -8,18 +8,16 @@ public class PaddleMovement : MonoBehaviour
     public float _speed;
     public float _maxXPos;
     bool _isPaddleDisable;
-
+    bool _isPaddleSucking;
     private void Start()
     {
         _polygonCollider = GetComponent<PolygonCollider2D>();
-
-        //Cursor.visible = false;
-        //Cursor.lockState = CursorLockMode.Locked;
+        SetCursorState(false);
     }
 
     void Update()
     {
-        if (_isPaddleDisable)
+        if (_isPaddleDisable || _isPaddleSucking)
             return;
 
 
@@ -36,5 +34,16 @@ public class PaddleMovement : MonoBehaviour
     {
         _isPaddleDisable = disable;
         _polygonCollider.enabled = !disable;
+    }
+    public void SetCursorState(bool state)
+    {
+        _isPaddleSucking = state;
+        Cursor.visible = state;
+
+        if (Cursor.visible) 
+        Cursor.lockState = CursorLockMode.None;
+        else
+            Cursor.lockState = CursorLockMode.Locked;
+
     }
 }

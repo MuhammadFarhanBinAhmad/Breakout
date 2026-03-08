@@ -9,19 +9,14 @@ public class CritAbility : ABSAbility
     private RNGService _rng => RNGService.Instance;
     public SOAbilityEffect test;
 
-    private void Start()
-    {
-        AddAddOnAbility(test);
-    }
+
 
     public override void ModifyHit(HitContext ctx)
     {
         //Increase base damage
 
-        var critChance = GetStat(UPGRADETARGET.CRITCHANCE).
-                        GetValue(UPGRADETARGET.CRITCHANCE);
-        var critMultiplier = GetStat(UPGRADETARGET.CRITMULTIPLIER)
-                        .GetValue(UPGRADETARGET.CRITMULTIPLIER);
+        var critChance = _SOAbilityEffect._baseCritChance;
+        var critMultiplier = _SOAbilityEffect._critMultiplier;
 
         print("Step 1.1: Check for crit");
         bool isCrit = RollCrit(critChance, _SOAbilityEffect._bonusPerFail);
