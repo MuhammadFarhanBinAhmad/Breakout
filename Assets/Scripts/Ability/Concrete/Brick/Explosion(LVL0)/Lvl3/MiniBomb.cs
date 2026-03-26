@@ -64,7 +64,6 @@ public class MiniBomb : MonoBehaviour
 
         if(_explosionDamage > 2)
         {
-            print("explosion damage = " + _explosionDamage + " Spawn more bomb");
             _miniBombAbility.SpawnMiniBomb(transform.position, _explosionDamage);
         }
 

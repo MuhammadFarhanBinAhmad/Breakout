@@ -8,11 +8,7 @@ public class ToxicAbility : ABSAbility
         var _effectDuration = _SOAbilityEffect._effectDuration;
 
         ctx._brick.ApplyStatus(
-         StatusType.Poison,
-            stacksToAdd: 1,
-            damagePerStack: (int)_statusDamage,
-            decayDuration: _effectDuration,
-            maxStacks: _SOAbilityEffect._maxStack
+            _SOStatusEffect
         );
     }
 }

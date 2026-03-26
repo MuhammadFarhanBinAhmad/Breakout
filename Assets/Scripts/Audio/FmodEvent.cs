@@ -28,6 +28,10 @@ public class FmodEvent : MonoBehaviour
     [field: SerializeField] public EventReference sfx_onBallRespawn { get; private set; }
     [field: SerializeField] public EventReference sfx_onBallHitWall { get; private set; }
 
+    [field: Header("Explosion")]
+    [field: SerializeField] public EventReference sfx_onBombExplosion { get; private set; }
+
+
     [field: Header("Time")]
     [field: SerializeField] public EventReference sfx_onNewDay { get; private set; }
     [field: SerializeField] public EventReference sfx_onNewWeek { get; private set; }

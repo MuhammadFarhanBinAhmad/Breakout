@@ -44,10 +44,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d11fd52d99a552146909a7faa2cbe9af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ElectricAbility
+  _abilityManager: {fileID: 0}
   _SOAbilityEffect: {fileID: 11400000, guid: 2deeb38661cb26843bdfc6b0443a3e7e, type: 2}
-  _ABSAddOnAbilityList: []
-  _AbilityStatRuntime:
-  - definition: {fileID: 11400000, guid: 04e313519303b1844bdb567a878b7ff8, type: 2}
-    level: 0
-  - definition: {fileID: 11400000, guid: 2e2ec79e1364dc546b3c96224242f370, type: 2}
-    level: 0
+  _SOStatusEffect: {fileID: 11400000, guid: 359f1fce57b4be74fa406dbbe9cb5950, type: 2}

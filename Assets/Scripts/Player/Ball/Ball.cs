@@ -8,7 +8,6 @@ public class Ball : MonoBehaviour
     SpriteRenderer _spriteRenderer;
     AbilityManager _abilityManager;
     BrickPool _brickPool;
-    GlobalFeedbackManager _globalFeedbackManager;
     BallFeedbackManager _ballFeedbackManager;
 
     public float _gravityScale;
@@ -48,7 +47,11 @@ public class Ball : MonoBehaviour
     [SerializeField] float _homingStrength = 0.08f;
     [SerializeField] float _minVerticalForHoming = 0.25f;
     [SerializeField] float _homingMaxDistance = 12f;
-
+    [Header("RespawnAnimation")]
+    [SerializeField] AnimationCurve easeOutElastic;
+    Vector3 _startingScale;
+    [SerializeField] float animationDuration;
+    [SerializeField] float _capscaleMultiplier;
     // -------------------------
     // Attraction fields (vacuum)
     // -------------------------
@@ -84,7 +87,6 @@ public class Ball : MonoBehaviour
         _spriteRenderer = GetComponent<SpriteRenderer>();
         _abilityManager = FindAnyObjectByType<AbilityManager>();
         _brickPool = FindAnyObjectByType<BrickPool>();
-        _globalFeedbackManager = FindAnyObjectByType<GlobalFeedbackManager>();
         _ballFeedbackManager = FindAnyObjectByType<BallFeedbackManager>();
 
         OnBrickHit += IncreaseCombo;
@@ -99,6 +101,8 @@ public class Ball : MonoBehaviour
         // initial downward velocity - preserve your original intent
         _rigRigidbody.linearVelocity = Vector2.down * _gravityScale;
         _rigRigidbody.linearDamping = normalDrag;
+
+        _startingScale = transform.localScale;
     }
     private void OnDisable()
     {
@@ -293,9 +297,33 @@ public class Ball : MonoBehaviour
         yield return new WaitForSeconds(_respawnTime);
         AudioManager.Instance.PlayOneShot(FmodEvent.Instance.sfx_onBallRespawn, transform.position);
         transform.position = _respawnPos.position;
+        StartCoroutine(AnimateBallRespawn());
         _spriteRenderer.enabled = true;
         _rigRigidbody.linearVelocity = Vector2.down * _gravityScale;
     }
+
+    IEnumerator AnimateBallRespawn()
+    {
+        Vector3 startScale = Vector3.zero;
+        Vector3 targetScale = _startingScale * _capscaleMultiplier;
+
+        float time = 0f;
+
+        while (time < animationDuration)
+        {
+            float normalized = time / animationDuration;
+            float curveValue = easeOutElastic.Evaluate(normalized);
+
+            transform.localScale =
+                Vector3.LerpUnclamped(startScale, targetScale, curveValue);
+
+            time += Time.deltaTime;
+            yield return null;
+        }
+
+        transform.localScale = _startingScale;
+    }
+
     void IncreaseCombo()
     {
         _currentCombo++;
@@ -316,7 +344,7 @@ public class Ball : MonoBehaviour
     {
         if (other.gameObject.CompareTag("Wall") || other.gameObject.CompareTag("Paddle") || other.gameObject.CompareTag("Brick"))
         {
-            _globalFeedbackManager.PlayGlobalFeedback?.Invoke();
+            GlobalFeedbackManager.Instance.PlayGlobalFeedback?.Invoke();
             OnBallHit?.Invoke();
 
             Vector2 avgNormal = Vector2.zero;

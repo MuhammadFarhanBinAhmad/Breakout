@@ -36,6 +36,13 @@ public class PaddleFeedbackManager : MonoBehaviour
     public GameObject _flashScreen;
     public float _flashDuration;
 
+    [Header("Breathing Animation")]
+    [SerializeField] float _breathSpeed = 2f;
+    [SerializeField] float _breathScaleAmount = 0.05f;
+
+    Coroutine _breathingRoutine;
+    bool _isBreathing = true;
+
     [Header("OnPaddleRespawn")]
     public GameObject _respawnVFX;
 
@@ -58,6 +65,8 @@ public class PaddleFeedbackManager : MonoBehaviour
     private void Start()
     {
         _startingScale = transform.localScale;
+        StartBreathing();
+
     }
     private void OnDisable()
     {
@@ -93,6 +102,8 @@ public class PaddleFeedbackManager : MonoBehaviour
     void PlayHitSoundEffect() => AudioManager.Instance.PlayOneShot(FmodEvent.Instance.sfx_onPaddleHitByBrick, transform.position);
     void PlayAnimatePaddleHit(float ballSpeed)
     {
+        StopBreathing();
+
         if (_paddleHitRoutine != null)
             StopCoroutine(_paddleHitRoutine);
 
@@ -100,6 +111,8 @@ public class PaddleFeedbackManager : MonoBehaviour
     }
     void PlayAnimatePaddleHit()
     {
+        StopBreathing();
+
         if (_paddleHitRoutine != null)
             StopCoroutine(_paddleHitRoutine);
 
@@ -107,10 +120,49 @@ public class PaddleFeedbackManager : MonoBehaviour
     }
     void PlayAnimatePaddleRespawn()
     {
+        StopBreathing();
+
         if (_paddleHitRoutine != null)
             StopCoroutine(_paddleHitRoutine);
 
         _paddleHitRoutine = StartCoroutine(AnimatePaddleRespawn());
+    }
+
+    void StartBreathing()
+    {
+        if (_breathingRoutine != null)
+            StopCoroutine(_breathingRoutine);
+
+        _isBreathing = true;
+        _breathingRoutine = StartCoroutine(AnimateBreathingRoutine());
+    }
+
+    void StopBreathing()
+    {
+        _isBreathing = false;
+
+        if (_breathingRoutine != null)
+        {
+            StopCoroutine(_breathingRoutine);
+            _breathingRoutine = null;
+        }
+
+        transform.localScale = _startingScale;
+    }
+    IEnumerator AnimateBreathingRoutine()
+    {
+        float time = 0f;
+
+        while (_isBreathing)
+        {
+            time += Time.deltaTime * _breathSpeed;
+
+            float scaleOffset = Mathf.Sin(time) * _breathScaleAmount;
+            transform.localScale = _startingScale * (1f + scaleOffset);
+
+            yield return null;
+        }
+
     }
     IEnumerator AnimatePaddleHit(float ballSpeed)
     {
@@ -143,6 +195,7 @@ public class PaddleFeedbackManager : MonoBehaviour
         }
 
         transform.localScale = _startingScale;
+        StartBreathing();
     }
     IEnumerator AnimatePaddleHit()
     {
@@ -164,6 +217,7 @@ public class PaddleFeedbackManager : MonoBehaviour
         }
 
         transform.localScale = _startingScale;
+        StartBreathing();
     }
     IEnumerator AnimatePaddleRespawn()
     {
@@ -185,6 +239,7 @@ public class PaddleFeedbackManager : MonoBehaviour
         }
 
         transform.localScale = _startingScale;
+        StartBreathing();
     }
     void PlayFreezeFrame()
     {

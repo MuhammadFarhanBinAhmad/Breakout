@@ -7,12 +7,7 @@ public class ElectricAbility : ABSAbility
         var dmg = _SOAbilityEffect._statusDamage;
         var delay = _SOAbilityEffect._effectDuration;
 
-        ctx._brick.ApplyStatus(
-         StatusType.Discharge,
-            stacksToAdd: 1,
-            damagePerStack: (int)dmg,
-            decayDuration: delay,
-            maxStacks: _SOAbilityEffect._maxStack
+        ctx._brick.ApplyStatus(_SOStatusEffect
         );
     }
 }

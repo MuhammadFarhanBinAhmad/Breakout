@@ -177,5 +177,41 @@ public class AbilityManager : MonoBehaviour
         }
     }
 
-   
+    public ABSAbility GetAbility(string id)
+    {
+        if (_abilitiesByID.TryGetValue(id, out ABSAbility ability))
+            return ability;
+
+        return null;
+    }
+
+    public void ApplyExplosionModifiers(HitContext hitCtx, ref ExplosionContext explosionCtx)
+    {
+        foreach (var ability in _brickAbilities)
+        {
+            if (ability is IExplosionContextModifier modifier)
+            {
+                modifier.ModifyExplosionContext(hitCtx, ref explosionCtx);
+            }
+        }
+    }
+    public void ApplyFireModifiers(HitContext hitCtx, ref HotZoneArea hza)
+    {
+        foreach (var ability in _brickAbilities)
+        {
+            if (ability is IFireContextModifier modifier)
+            {
+                modifier.ModifyFireContext(hitCtx, ref hza);
+            }
+        }
+    }
+    public bool RemoveAbility(string id)
+    {
+        if (_abilitiesByID.TryGetValue(id, out ABSAbility ability))
+        {
+            return RemoveAbility(ability) != null;
+        }
+
+        return false;
+    }
 }

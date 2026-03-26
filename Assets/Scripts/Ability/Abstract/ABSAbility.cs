@@ -11,6 +11,7 @@ public abstract class ABSAbility : MonoBehaviour
     [SerializeField] protected AbilityManager _abilityManager;
 
     public SOAbilityEffect _SOAbilityEffect;
+    public SOStatusEffect _SOStatusEffect;
 
     public bool IsUnlocked { get; private set; }
 

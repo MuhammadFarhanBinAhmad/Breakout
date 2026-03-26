@@ -116,7 +116,7 @@ Transform:
   m_LocalRotation: {x: -1, y: 0, z: 0, w: 0}
   m_LocalPosition: {x: -11.90406, y: -11.92882, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 7638435940837358460}
   m_Father: {fileID: 0}
@@ -5030,7 +5030,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88953c8a12d36d948b10e8b0a4e39cc2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExplosionDamage
-  _damage: 10
 --- !u!50 &6355230693770959371
 Rigidbody2D:
   serializedVersion: 5

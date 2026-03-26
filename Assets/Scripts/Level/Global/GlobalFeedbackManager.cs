@@ -27,8 +27,16 @@ public class GlobalFeedbackManager : MonoBehaviour
     Vector3 ballOriginalScale;
     Vector3 paddleOriginalScale;
     Vector3[] wallOriginalScales = Array.Empty<Vector3>();
-    Vector3[] brickOriginalScales = Array.Empty<Vector3>(); 
+    Vector3[] brickOriginalScales = Array.Empty<Vector3>();
 
+    public static GlobalFeedbackManager Instance { get; private set; }
+    private void Awake()
+    {
+        if (Instance != null)
+            print("more than one instance in the scene");
+
+        Instance = this;
+    }
     private void Start()
     {
         _brickPool = FindAnyObjectByType<BrickPool>();

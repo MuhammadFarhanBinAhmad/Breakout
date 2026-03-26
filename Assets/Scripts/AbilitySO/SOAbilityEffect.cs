@@ -16,7 +16,7 @@ public enum BRICKABILITYTYPE
 }
 
 
-[CreateAssetMenu(menuName = "Ability/Effect")]
+[CreateAssetMenu(menuName = "Ability/Ability Effect")]
 public class SOAbilityEffect : ScriptableObject
 {
     public string _abilityName;
@@ -27,6 +27,7 @@ public class SOAbilityEffect : ScriptableObject
     [Header("Runtime")]
     public GameObject _abilityPrefab;
     public List<SOAbilityEffect> _abilitiesChild;
+    public SOAbilityEffect _abilityToRemove;
 
     public bool _genericEffect;
     public bool _applyStatus;
@@ -41,6 +42,8 @@ public class SOAbilityEffect : ScriptableObject
     public float _baseDamageMultiplier;//Value of abiltity effect to change. Be use to replace, add,minus,etc. Is multiplier(eg.thershold, base damage, etc.)
     [GroupUnder(nameof(_genericEffect))]
     public float _bonusPerFail;
+    [GroupUnder(nameof(_genericEffect))]
+    public float _scaleSizeMultiplier;
     [GroupUnder(nameof(_applyStatus))]
     public float _effectDuration;
     [GroupUnder(nameof(_applyStatus))]

@@ -1,14 +1,17 @@
 using System;
 using System.Collections.Generic;
 using TMPro.EditorUtilities;
+using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
 using UnityEngine.Experimental.GlobalIllumination;
 using UnityEngine.Rendering;
 public enum StatusType
 {
-    Poison,
-    Burn,
-    Discharge
+    NULL,
+    POISON,
+    BURN,
+    DISCHARGE,
+    STUN
 }
 
 [System.Serializable]
@@ -21,8 +24,8 @@ public class StatusInstance
 
     public int damagePerStack;
 
-    public float decayDuration;     // Time to lose ONE stack
-    public float remainingTime;
+    public float effectDuration;
+    public float remainingEffectTime;
 }
 public class BrickBar : MonoBehaviour
 {
@@ -49,6 +52,7 @@ public class BrickBar : MonoBehaviour
     public int _health;
     public int _shield;
     public float _tickTimer;
+    float _startFallSpeed;
     public float _fallSpeed;
 
     [Header("Essence")]
@@ -81,6 +85,8 @@ public class BrickBar : MonoBehaviour
         _onDeath += HandleDeath;
 
         _onDeathByPaddle += HandleDeathByPaddle;
+
+        _startFallSpeed = _fallSpeed;
     }
     private void OnDestroy()
     {
@@ -117,18 +123,26 @@ public class BrickBar : MonoBehaviour
         {
             var status = kvp.Value;
 
-            // DOT tick
-            _tickTimer += dt;
-            if (_tickTimer >= 1f)
+            if(status.type == StatusType.STUN)
             {
-                _tickTimer -= 1f;
-                OnDamage(status.stacks * status.damagePerStack);
+                _fallSpeed = 0;
+                print("Hit1");
+            }
+            else
+            {
+                // DOT tick
+                _tickTimer += dt;
+                if (_tickTimer >= 1f)
+                {
+                    _tickTimer -= 1f;
+                    OnDamage(status.stacks * status.damagePerStack);
+                }
             }
 
-            // Stack decay timer
-            status.remainingTime -= dt;
+            // Stack effect timer
+            status.remainingEffectTime -= dt;
 
-            if (status.remainingTime <= 0f)
+            if (status.remainingEffectTime <= 0f)
             {
                 status.stacks--;
                 print("Stack: " + status.stacks);
@@ -140,13 +154,19 @@ public class BrickBar : MonoBehaviour
                 else
                 {
                     // Restart decay timer for next stack
-                    status.remainingTime = status.decayDuration;
+                    status.remainingEffectTime = status.effectDuration;
                 }
             }
         }
 
+        //remove all completed status effect
         foreach (var key in toRemove)
         {
+            if (key == StatusType.STUN)
+            {
+                _fallSpeed = _startFallSpeed;
+                print("Hit0");
+            }
             _statuses.Remove(key);
         }
     }
@@ -217,20 +237,16 @@ public class BrickBar : MonoBehaviour
         }
     }
 
-    public void ApplyStatus(StatusType type,
-    int stacksToAdd,
-    int damagePerStack,
-    float decayDuration,
-    int maxStacks)
+    public void ApplyStatus(SOStatusEffect _statusEffect)
     {
-        //check if status already exist
+        //check if status already exist2
         if (_statuses.Count > 0)
         {
             foreach (StatusType st in _statuses.Keys)
             {
-                if (type == st)
+                if (_statusEffect._statusType == st)
                 {
-                    _statuses[st].stacks += stacksToAdd;
+                    _statuses[st].stacks += _statusEffect._stacksToAdd;
                     if (_statuses[st].stacks > _statuses[st].maxStacks)
                         _statuses[st].stacks = _statuses[st].maxStacks;
 
@@ -242,23 +258,23 @@ public class BrickBar : MonoBehaviour
 
         StatusInstance status = new StatusInstance
         {
-            type = type,
+            type = _statusEffect._statusType,
             stacks = 1,
-            maxStacks = maxStacks,
-            damagePerStack = damagePerStack,
-            decayDuration = decayDuration,
+            maxStacks = _statusEffect._maxStacks,
+            damagePerStack = _statusEffect._damagePerStack,
+            effectDuration = _statusEffect._effectDuration,
         };
 
-        _statuses.Add(type, status);
+        _statuses.Add(_statusEffect._statusType, status);
 
         // Increase stacks (cap at max)
         status.stacks = Mathf.Min(
-            status.stacks + stacksToAdd,
+            status.stacks + _statusEffect._stacksToAdd,
             status.maxStacks
         );
 
         // Refresh decay timer on every hit
-        status.remainingTime = status.decayDuration;
+        status.remainingEffectTime = status.effectDuration;
 
         print(gameObject.name + " :new status added");
         print(status.stacks + " :stack");

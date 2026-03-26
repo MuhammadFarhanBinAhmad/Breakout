@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db49deff4a1310443878145d82c40685, type: 3}
+  m_Name: SO_CombustionAbility
+  m_EditorClassIdentifier: Assembly-CSharp::SOAbilityEffect
+  _abilityName: HotZone
+  _abilityType: 0
+  _abilityPrefab: {fileID: 5842573389703800596, guid: 536950077b3a9074cadac83cad801715, type: 3}
+  _abilitiesChild: []
+  _abilityToRemove: {fileID: 0}
+  _genericEffect: 0
+  _applyStatus: 0
+  _spawnEffect: 0
+  _critEffect: 0
+  _baseValue: 0
+  _baseDamageValue: 0
+  _baseDamageMultiplier: 0
+  _bonusPerFail: 0
+  _scaleSizeMultiplier: 2
+  _effectDuration: 0.5
+  _statusDamage: 1
+  _maxStack: 0
+  _amountToSpawn: 0
+  _baseCritChance: 0
+  _critMultiplier: 0
