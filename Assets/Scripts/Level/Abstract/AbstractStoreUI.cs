@@ -1,4 +1,7 @@
+using Unity.VisualScripting;
+using UnityEditor.Playables;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public abstract class AbstractStoreUI : MonoBehaviour
 {
@@ -7,10 +10,5 @@ public abstract class AbstractStoreUI : MonoBehaviour
     public virtual void ToggleUICanvas()
     {
         storeUI.SetActive(!storeUI.activeSelf);
-    }
-
-    public void OnButtonClick()
-    {
-        print("play audio");
     }
 }

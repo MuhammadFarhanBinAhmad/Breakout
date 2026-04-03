@@ -176,6 +176,9 @@ public class TowerEssence : MonoBehaviour
                 _towerManager.IncreaseEssenceCount(GetHalfEssence());
                 break;
         }
+        rb.linearVelocity = Vector3.zero;
+        StopAttraction();
+
         gameObject.SetActive(false);
     }
 

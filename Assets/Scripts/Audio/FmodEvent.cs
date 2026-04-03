@@ -49,7 +49,8 @@ public class FmodEvent : MonoBehaviour
     [field: Header("UI")]
     [field: SerializeField] public EventReference sfx_onButtonPress { get; private set; }
     [field: SerializeField] public EventReference sfx_onButtonHover { get; private set; }
-
+    [field: SerializeField] public EventReference sfx_closeOverlay { get; private set; }
+    [field: SerializeField] public EventReference sfx_openOverlay { get; private set; }
 
     public static FmodEvent Instance { get; private set; }
 

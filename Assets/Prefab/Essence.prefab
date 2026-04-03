@@ -115,14 +115,14 @@ MonoBehaviour:
   - 10
   _essenceCurrentLiveTime: 0
   _light2D: {fileID: 8287269463037795241}
-  _startIntensity: 10
+  _startIntensity: 15
   _endIntensity: 0.5
   intensityDuration: 10
   maxSpeed: 25
   attractedDrag: 0.2
   normalDrag: 1
-  minImpulse: 5
-  maxImpulse: 25
+  minImpulse: 3
+  maxImpulse: 5
   _collectDistance: 1
   suctionDrag: 0.1
   suctionReleaseImpulseMultiplier: 1
