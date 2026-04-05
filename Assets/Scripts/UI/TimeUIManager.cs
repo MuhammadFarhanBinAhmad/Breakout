@@ -6,8 +6,7 @@ public class TimeUIManager : MonoBehaviour
     TimeManager _timeManager;
 
     [Header("TimeText")]
-    public TextMeshProUGUI text_currentWeek;
-    public TextMeshProUGUI text_currentDay;
+    public TextMeshProUGUI text_dayLeft;
 
 
     [Header("In-Game Clock")]
@@ -29,14 +28,12 @@ public class TimeUIManager : MonoBehaviour
     }
     void Start()
     {
-        _timeManager._weekPass += UpdateTimeUI;
         _timeManager._dayPass += UpdateTimeUI;
 
         UpdateTimeUI();
     }
     private void OnDestroy()
     {
-        _timeManager._weekPass -= UpdateTimeUI;
         _timeManager._dayPass -= UpdateTimeUI;
     }
 
@@ -66,49 +63,6 @@ public class TimeUIManager : MonoBehaviour
     }
     void UpdateTimeUI()
     {
-        text_currentWeek.text = "Week: " + _timeManager.GetCurrentWeek().ToString();
-
-        switch (_timeManager.GetCurrentDay())
-        {
-            case 0:
-                {
-                    text_currentDay.text = "Monday";
-                    break;
-                }
-            case 1:
-                {
-                    text_currentDay.text = "Tuesday";
-                    break;
-                }
-            case 2:
-                {
-                    text_currentDay.text = "Wednesday";
-                    break;
-                }
-            case 3:
-                {
-                    text_currentDay.text = "Thursday";
-                    break;
-                }
-            case 4:
-                {
-                    text_currentDay.text = "Friday";
-                    break;
-                }
-            case 5:
-                {
-                    text_currentDay.text = "Saturday";
-                    break;
-                }
-            case 6:
-                {
-                    text_currentDay.text = "SUNDAY";
-                    break;
-                }
-
-        }
-        
-
-
+        text_dayLeft.text = "Days Left: " + (_timeManager.GetMaxGameDuration() - _timeManager.GetTotalDayPass()).ToString();
     }
 }

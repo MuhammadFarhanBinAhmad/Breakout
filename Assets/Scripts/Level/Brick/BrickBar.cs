@@ -65,6 +65,7 @@ public class BrickBar : MonoBehaviour
 
     public Action _onDeath;
     public Action _onDeathByPaddle;
+    public Action _onDeathByTower;
 
     private void Awake()
     {
@@ -83,16 +84,42 @@ public class BrickBar : MonoBehaviour
         _essencePool = FindAnyObjectByType<EssencePool>();
 
         _onDeath += HandleDeath;
+        _onDeath += SpawnEssence;
+        _onDeath += _brickGenerator.OnBrickDestroyed;
+        _onDeath += _statuses.Clear;
+        _onDeath += RemoveAllModifiers;
+
 
         _onDeathByPaddle += HandleDeathByPaddle;
+        _onDeathByPaddle += _statuses.Clear;
+        _onDeathByPaddle += RemoveAllModifiers;
+        _onDeathByPaddle += _brickGenerator.OnBrickDestroyed;
+
+        _onDeathByTower += HandleDeathWithotSpawningEssence;
+        _onDeathByTower += _statuses.Clear;
+        _onDeathByTower += RemoveAllModifiers;
+        _onDeathByTower += _brickGenerator.OnBrickDestroyed;
 
         _startFallSpeed = _fallSpeed;
     }
     private void OnDestroy()
     {
         _onDeath -= HandleDeath;
+        _onDeath -= SpawnEssence;
+        _onDeath -= _brickGenerator.OnBrickDestroyed;
+        _onDeath -= _statuses.Clear;
+        _onDeath -= RemoveAllModifiers;
 
         _onDeathByPaddle -= HandleDeathByPaddle;
+        _onDeathByPaddle -= _statuses.Clear;
+        _onDeathByPaddle -= RemoveAllModifiers;
+        _onDeathByPaddle -= _brickGenerator.OnBrickDestroyed;
+
+        _onDeathByTower -= HandleDeathWithotSpawningEssence;
+        _onDeathByTower -= _statuses.Clear;
+        _onDeathByTower -= RemoveAllModifiers;
+        _onDeathByTower -= _brickGenerator.OnBrickDestroyed;
+
     }
 
     private void Update()
@@ -126,7 +153,6 @@ public class BrickBar : MonoBehaviour
             if(status.type == StatusType.STUN)
             {
                 _fallSpeed = 0;
-                print("Hit1");
             }
             else
             {
@@ -165,7 +191,6 @@ public class BrickBar : MonoBehaviour
             if (key == StatusType.STUN)
             {
                 _fallSpeed = _startFallSpeed;
-                print("Hit0");
             }
             _statuses.Remove(key);
         }
@@ -182,6 +207,8 @@ public class BrickBar : MonoBehaviour
         //For Hit shield effect
         if (modified <= 0)
             return;
+
+        print("DAMAGE: " + modified);
 
         _health -= modified;
 
@@ -200,26 +227,30 @@ public class BrickBar : MonoBehaviour
 
     void HandleDeath()
     {
-        _statuses.Clear();
-        RemoveAllModifiers();
 
         abilityManager.NotifyBrickDestroyed(this);
-        _brickGenerator.OnBrickDestroyed();
         _brickPool.RemoveActiveBrick(this.gameObject);
-        SpawnEssence();
         Instantiate(_destroyParticleEffect, transform.position, Quaternion.identity);
         AudioManager.Instance.PlayOneShot(FmodEvent.Instance.sfx_brickDestroy, transform.position);
 
         pendingDeath = false;
         gameObject.SetActive(false);
     }
-    void HandleDeathByPaddle()
+    void HandleDeathWithotSpawningEssence()
     {
         _statuses.Clear();
         RemoveAllModifiers();
-
         abilityManager.NotifyBrickDestroyed(this);
         _brickGenerator.OnBrickDestroyed();
+        _brickPool.RemoveActiveBrick(this.gameObject);
+        Instantiate(_destroyParticleEffect, transform.position, Quaternion.identity);
+        AudioManager.Instance.PlayOneShot(FmodEvent.Instance.sfx_brickDestroy, transform.position);
+        pendingDeath = false;
+        gameObject.SetActive(false);
+    }
+    void HandleDeathByPaddle()
+    {
+        abilityManager.NotifyBrickDestroyed(this);
         _brickPool.RemoveActiveBrick(this.gameObject);
         Instantiate(_destroyParticleEffect, transform.position, Quaternion.identity);
         AudioManager.Instance.PlayOneShot(FmodEvent.Instance.sfx_brickDestroy, transform.position);

@@ -5,20 +5,14 @@ using UnityEngine;
 public class TimeManager : MonoBehaviour
 {
     [Header("TimeKeeper")]
-    [SerializeField] int week;
-    [SerializeField] int day;
-    [SerializeField] int _month;
 
-    [SerializeField] int _maxDay;
-    [SerializeField] int _maxWeek;
-    [SerializeField] int _maxMonth;
+    [SerializeField] int _maxGameDuration;
     int _totalDayPass;
     [SerializeField] float _fullDayDuration;
     [SerializeField] float _currentDayDuration;
 
     public Action _dayPass;
-    public Action _weekPass;
-    public Action _monthPass;
+    public Action _endGame;
 
     [Header("RealTime")]
     [SerializeField] float _currentRealTimePass;
@@ -26,25 +20,17 @@ public class TimeManager : MonoBehaviour
     private void Start()
     {
         _dayPass += PlayDayPassAudio;
-        _weekPass += OnEndOfWeek;
-        _weekPass += PlayWeekPassAudio;
-        _monthPass += OnEndOfMonth;
-        _monthPass += PlayMonthPassAudio;
     }
     private void OnDisable()
     {
         _dayPass -= PlayDayPassAudio;
-        _weekPass -= OnEndOfWeek;
-        _weekPass -= PlayWeekPassAudio;
-        _monthPass -= OnEndOfMonth;
-        _monthPass -= PlayMonthPassAudio;
     }
     private void Update()
     {
-        WeekPass();
+        CountDayTime();
         _currentRealTimePass += Time.deltaTime;
     }
-    public void WeekPass()
+    public void CountDayTime()
     {
         if(_currentDayDuration > 0)
         {
@@ -52,33 +38,10 @@ public class TimeManager : MonoBehaviour
         }
         else
         {
-            day++;
             _totalDayPass++;
             _currentDayDuration = _fullDayDuration;
             _dayPass?.Invoke();
-            if (day >= _maxDay)
-            {
-                _weekPass?.Invoke();
-            }
-            if(week >= _maxWeek)
-            {
-                _monthPass?.Invoke();
-            }
             
-        }
-    }
-    public void OnEndOfWeek()
-    {
-        week++;
-        day = 0;       
-    }
-    public void OnEndOfMonth()
-    {
-        week = 0;
-        _month++;
-        if (_month >= _maxMonth)
-        {
-            print("end of game");
         }
     }
     public float GetDayNormalized()
@@ -87,19 +50,10 @@ public class TimeManager : MonoBehaviour
     }
     public static void StopTime() => Time.timeScale = 0f;
     public static void StartTime() => Time.timeScale = 1f;
-
     public float GetCurrentRealTime () => _currentRealTimePass;
-    public int GetCurrentWeek() => week;
-    public int GetCurrentDay() => day;
-    public int GetCurrentMonth() => _month;
-    public int GetMaxWeek() => _maxWeek;
-    public int GetMaxDay() => _maxDay;
-    public int GetMaxMonth() => _maxMonth;
     public int GetTotalDayPass() => _totalDayPass;
-
+    public int GetMaxGameDuration() => _maxGameDuration;
     public void PlayDayPassAudio() => AudioManager.Instance.PlayOneShot(FmodEvent.Instance.sfx_onNewDay, transform.position);
-    public void PlayWeekPassAudio() => AudioManager.Instance.PlayOneShot(FmodEvent.Instance.sfx_onNewWeek, transform.position);
-    public void PlayMonthPassAudio() => AudioManager.Instance.PlayOneShot(FmodEvent.Instance.sfx_onNewMonth, transform.position);
-
+    
 
 }

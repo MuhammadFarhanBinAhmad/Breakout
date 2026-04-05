@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &2343601066325527684
+--- !u!1 &152845715585999439
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,44 +8,42 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 5374183220375637133}
-  - component: {fileID: 4749963222927789495}
+  - component: {fileID: 7682628325655934784}
+  - component: {fileID: 9103110103483844663}
   m_Layer: 0
-  m_Name: Splitter
+  m_Name: OneUp
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &5374183220375637133
+--- !u!4 &7682628325655934784
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2343601066325527684}
+  m_GameObject: {fileID: 152845715585999439}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -4.84373, y: 64.18302, z: 0}
+  m_LocalPosition: {x: 291.4666, y: 27.73174, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &4749963222927789495
+--- !u!114 &9103110103483844663
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2343601066325527684}
+  m_GameObject: {fileID: 152845715585999439}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 01d16a40ff5217343823a4874833feac, type: 3}
+  m_Script: {fileID: 11500000, guid: cc9e405945548104986d42ab9c670a14, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Spliter
-  _SOAbilityEffect: {fileID: 0}
-  _ABSAddOnAbilityList: []
-  _AbilityStatRuntime: []
-  _chanceToSpawnBall: 100
-  _ball: {fileID: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::OneUp
+  _abilityManager: {fileID: 0}
+  _SOAbilityEffect: {fileID: 11400000, guid: 36c95c864e5c0894795462228344a71e, type: 2}
+  _SOStatusEffect: {fileID: 0}

@@ -9,13 +9,9 @@ public class Spliter : ABSAbility
 
     private float currentChance;
 
-    private GameObject _ball;
-
     private void Start()
     {
-        _ball = FindAnyObjectByType<Ball>().gameObject;
         currentChance = baseChance;
-
     }
     public override void OnHit(HitContext ctx)
     {
@@ -23,9 +19,9 @@ public class Spliter : ABSAbility
 
         if (roll <= currentChance)
         {
-            Instantiate(_ball, ctx._brick.transform.position, ctx._brick.transform.rotation);
-            _ball.tag = "CopyBall";
-            _ball.GetComponent<Ball>()._copyBall = true;
+            Ball ballCopy = Instantiate(_ball, ctx._brick.transform.position, ctx._brick.transform.rotation);
+            ballCopy.tag = "CopyBall";
+            ballCopy._copyBall = true;
             // Reset after success
             currentChance = baseChance;
         }

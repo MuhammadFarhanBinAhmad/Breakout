@@ -11,8 +11,7 @@ public class TowerManager : MonoBehaviour
     [Tooltip("Starting threshold of essence required to trigger an OnEssenceCollect.")]
     public int _initialEssenceThreshold = 5;
     [Tooltip("Current threshold; starts at initial and is increased on milestones.")]
-    public int _essenceThreshold;
-    public int _totalEssenceCollected;
+    public int _essenceToPureEssenceConversionRate;
     public int _currentEssenceCount;
     internal int _currentPureEssence;
     public Action OnEssenceCollect;
@@ -25,9 +24,8 @@ public class TowerManager : MonoBehaviour
     public int _essenceIncreaseBase = 2;
 
     [Header("Brick")]
-    public int _totalBrickCount;
-    public int _brickThreshold;
-    int _currentBrickCount;
+    [SerializeField] int _brickToFloorConversionRate;
+    [SerializeField] int _currentBrickCount;
     public Action OnBrickIncrease;
     public Action OnBrickDecrease;
     public Vector2 _posOffset;
@@ -44,21 +42,24 @@ public class TowerManager : MonoBehaviour
     public int[] _towerHeightCheck;
     bool _receiveWarning;
 
+    Action _onTowerTakingDamage;
+
 
     void Awake()
     {
         _timeManager = FindAnyObjectByType<TimeManager>();
-        _essenceThreshold = _initialEssenceThreshold;
+        _essenceToPureEssenceConversionRate = _initialEssenceThreshold;
 
     }
     private void Start()
     {
         // subscribe to month pass if TimeManager exposes this
         if (_timeManager != null)
-            _timeManager._weekPass += EndOfWeekCheck;
+            _timeManager._dayPass += EndOfDayCheck;
 
         OnEssenceCollect += IncreaseBrickCount;
         OnHeightIncrease += CreateNewFloor;
+        _onTowerTakingDamage += TowerTakeDamage;
 
         PopulateTowerHeightCheck();
     }
@@ -71,19 +72,20 @@ public class TowerManager : MonoBehaviour
 #endif
     private void OnDisable()
     {
-        _timeManager._weekPass -= EndOfWeekCheck;
+        _timeManager._dayPass -= EndOfDayCheck;
         OnEssenceCollect -= IncreaseBrickCount;
         OnHeightIncrease -= CreateNewFloor;
+        _onTowerTakingDamage -= TowerTakeDamage;
+
     }
 
     public void IncreaseEssenceCount(int amt)
     {
         _currentEssenceCount += amt;
 
-        if (_currentEssenceCount >= _essenceThreshold)
+        if (_currentEssenceCount >= _essenceToPureEssenceConversionRate)
         {
             _currentEssenceCount = 0;
-            _totalBrickCount++;
             _currentBrickCount++;
             _currentPureEssence++;
             AudioManager.Instance.PlayOneShot(FmodEvent.Instance.sfx_onBrickMade, transform.position);
@@ -95,7 +97,7 @@ public class TowerManager : MonoBehaviour
 
         OnBrickIncrease?.Invoke();
 
-        if (_currentBrickCount >= _brickThreshold)
+        if (_currentBrickCount >= _brickToFloorConversionRate)
         {
             _currentBrickCount = 0;
             _currentTowerHeight++;
@@ -122,7 +124,7 @@ public class TowerManager : MonoBehaviour
 
         // use TimeManager's max month as a normaliser to build progress for the easing curve
         int maxPhases;
-        maxPhases = _timeManager.GetMaxWeek();
+        maxPhases = _timeManager.GetTotalDayPass();
 
         // progress in [0,1] = milestoneIndex / maxPhases (clamped)
         float progress = (float)milestoneIndex / (float)maxPhases;
@@ -133,7 +135,7 @@ public class TowerManager : MonoBehaviour
         // compute increase (at least 1)
         int increase = Mathf.Max(1, Mathf.RoundToInt(_essenceIncreaseBase * eased));
 
-        _essenceThreshold += increase;
+        _essenceToPureEssenceConversionRate += increase;
 
     }
 
@@ -141,9 +143,9 @@ public class TowerManager : MonoBehaviour
     {
         transform.position = new Vector2(transform.position.x, transform.position.y - (_posOffset.y * _currentTowerHeight));
     }
-    public void EndOfWeekCheck()
+    public void EndOfDayCheck()
     {
-        if(_currentTowerHeight >= _towerHeightCheck[_timeManager.GetCurrentWeek()])
+        if(_currentTowerHeight >= _towerHeightCheck[_timeManager.GetTotalDayPass()])
         {
             print("pass");
         }
@@ -185,8 +187,39 @@ public class TowerManager : MonoBehaviour
             _towerHeightCheck[i] = Mathf.RoundToInt(val);    // integer thresholds
         }
     }
+    public void TowerTakeDamage()
+    {
+        if(_currentTowerHeight > 0)
+        {
+            if (_currentBrickCount < _brickToFloorConversionRate)
+            {
+                _currentBrickCount--;
 
+                if (_currentBrickCount == 0)
+                {
+                    _currentTowerHeight--;
+                    _currentBrickCount = _brickToFloorConversionRate - 1;
+                }
+            }
+        }
+
+    }
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        BrickBar _bb = other.GetComponent<BrickBar>();
+
+        if (_bb != null)
+        {
+            _bb._onDeathByTower?.Invoke();
+            _onTowerTakingDamage?.Invoke();
+        }
+    }
+    public int GetCurrentEssence() => _currentEssenceCount;
     public void DeductPureEssence(int value) => _currentPureEssence -= value;
-    public int GetTotalPureEssence() => _currentPureEssence;
-    
+    public int GetTotalPureEssenceCount() => _currentPureEssence;
+    public int GetCurrentBrickCount() => _currentBrickCount;
+    public int GetBrickFloorConversionRate() => _brickToFloorConversionRate;
+    public int GetEssencePureEssenceConversionRate() => _essenceToPureEssenceConversionRate;
+
+
 }

@@ -25,11 +25,9 @@ public class CritAbility : ABSAbility
         {
             print("Modfy crit value");
             ctx._isCrit = true;
-            ctx._finaleDamage = Mathf.CeilToInt(
+            ctx._baseDamage = Mathf.CeilToInt(
                 ctx._baseDamage * critMultiplier
             );
-
-            print("baseDmg: " + ctx._baseDamage + " _finaleDamage: " + ctx._finaleDamage);
         }
 
         base.ModifyHit(ctx);

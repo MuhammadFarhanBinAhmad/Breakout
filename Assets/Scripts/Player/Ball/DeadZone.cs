@@ -10,8 +10,15 @@ public class DeadZone : MonoBehaviour
         {
             Ball ball = other.GetComponent<Ball>();
             _deathVFX.SetActive(true);
-            AudioManager.Instance.PlayOneShot(FmodEvent.Instance.sfx_onBallDestroy, transform.position);
-            ball.OnBallReset?.Invoke();
+            if(!ball._copyBall)
+            {
+                ball.OnBallReset?.Invoke();
+            }
+            else
+            {
+                ball.OnBallDestroy?.Invoke();
+            }
+
         }
         if(other.GetComponent<PaddleHealth>() != null)
         {

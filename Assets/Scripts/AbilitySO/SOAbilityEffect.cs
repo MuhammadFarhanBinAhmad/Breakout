@@ -33,6 +33,7 @@ public class SOAbilityEffect : ScriptableObject
     public bool _applyStatus;
     public bool _spawnEffect;
     public bool _critEffect;
+    public bool _explosionEffect;
 
     [GroupUnder(nameof(_genericEffect))]
     public float _baseValue;//Value of abiltity effect to change. Be use to replace, add,minus, etc(eg.thershold, combo, etc.)
@@ -56,4 +57,8 @@ public class SOAbilityEffect : ScriptableObject
     public float _baseCritChance;
     [GroupUnder(nameof(_critEffect))]
     public float _critMultiplier;
+    [GroupUnder(nameof(_explosionEffect))]
+    public float _explosionDamageMultiplier;
+    [GroupUnder(nameof(_explosionEffect))]
+    public float _explosionSizeMultiplier;
 }

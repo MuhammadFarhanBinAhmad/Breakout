@@ -41,11 +41,11 @@ public class AbilityStoreUI : AbstractStoreUI
     {
 
         // Clear all lists
-        for (int i = 0; i < 4; i++)
-        {
-            abilityLevels[i].Clear();
-            spawnedButtonsLevels[i].Clear();
-        }
+        //for (int i = 0; i < 4; i++)
+        //{
+        //    abilityLevels[i].Clear();
+        //    spawnedButtonsLevels[i].Clear();
+        //}
 
         // Get abilities
         abilityList = _storeAbilityManager.GetAbilityList();

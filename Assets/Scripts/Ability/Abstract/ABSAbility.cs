@@ -35,7 +35,7 @@ public abstract class ABSAbility : MonoBehaviour
     // Modify phase: abilities & their addons can modify the context.All damage calculation to be done here
     public virtual void ModifyHit(HitContext ctx)
     {
-        ctx._finaleDamage += (int)((float)(ctx._baseDamage) * _SOAbilityEffect._baseDamageMultiplier);
+        ctx._baseDamage += (int)((float)(ctx._baseDamage) * _SOAbilityEffect._baseDamageMultiplier);
 
     }
 

@@ -63,11 +63,15 @@ public class BrickGenerator : MonoBehaviour
         _onSpawnNextWave += SpawnNextWave;
         _timeManager._dayPass += CheckBrickToAdd;
         _timeManager._dayPass += SetAPOfTheDay;
+
+        SetAttributePointForEachPhase();
+
     }
 
     private void Start()
     {
-        SetAttributePointForEachPhase();
+        CheckBrickToAdd();
+        SetAPOfTheDay();
         _onSpawnNextWave?.Invoke();
     }
     private void OnDisable()
@@ -114,7 +118,7 @@ public class BrickGenerator : MonoBehaviour
     {
         int phases = 1 ;
         if (_timeManager != null)
-            phases = _timeManager.GetMaxWeek() * _timeManager.GetMaxDay();
+            phases = _timeManager.GetMaxGameDuration() ;
         else
             Debug.LogWarning("TimeManager not found when generating health per phase. Defaulting to 1 phase.");
 
@@ -132,7 +136,7 @@ public class BrickGenerator : MonoBehaviour
             _attributePoints[i] = Mathf.RoundToInt(val);
         }
     }
-    void SetAPOfTheDay() => _APPerWaveForTheDay = _attributePoints[_timeManager.GetCurrentDay()];
+    void SetAPOfTheDay() => _APPerWaveForTheDay = _attributePoints[_timeManager.GetTotalDayPass()];
     void SpawnNextWave()
     {
         StartCoroutine(SpawnFormation(GetBrickFormation()));
@@ -190,7 +194,7 @@ public class BrickGenerator : MonoBehaviour
     }
     public void CheckBrickToAdd()
     {
-        int day = _timeManager.GetCurrentDay();
+        int day = _timeManager.GetTotalDayPass();
 
         for (int i = 0; i < _brickTypesList.Count; i++)
         {

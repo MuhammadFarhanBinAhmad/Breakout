@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Ball : MonoBehaviour
 {
-    Rigidbody2D _rigRigidbody;
+    internal Rigidbody2D _rigidbody;
     SpriteRenderer _spriteRenderer;
     AbilityManager _abilityManager;
     BrickPool _brickPool;
@@ -15,6 +15,8 @@ public class Ball : MonoBehaviour
 
     public Action OnBallHit;
     public Action OnBallReset;
+    public Action OnBallDestroy;//For copy
+
     public Action OnBrickHit;
 
     public Action OnUpgradeBallBaseDamage;
@@ -83,7 +85,7 @@ public class Ball : MonoBehaviour
 
     private void Awake()
     {
-        _rigRigidbody = GetComponent<Rigidbody2D>();
+        _rigidbody = GetComponent<Rigidbody2D>();
         _spriteRenderer = GetComponent<SpriteRenderer>();
         _abilityManager = FindAnyObjectByType<AbilityManager>();
         _brickPool = FindAnyObjectByType<BrickPool>();
@@ -95,12 +97,15 @@ public class Ball : MonoBehaviour
         OnBallReset += ResetCombo;
         OnBallReset += ResetPosition;
         OnBallReset += PlayBallDestroyAudio;
+
+        OnBallDestroy += DestroyCopyBall;
+        OnBallDestroy += PlayBallDestroyAudio;
     }
     private void Start()
     {
         // initial downward velocity - preserve your original intent
-        _rigRigidbody.linearVelocity = Vector2.down * _gravityScale;
-        _rigRigidbody.linearDamping = normalDrag;
+        _rigidbody.linearVelocity = Vector2.down * _gravityScale;
+        _rigidbody.linearDamping = normalDrag;
 
         _startingScale = transform.localScale;
     }
@@ -112,6 +117,9 @@ public class Ball : MonoBehaviour
         OnBallReset -= ResetCombo;
         OnBallReset -= ResetPosition;
         OnBallReset -= PlayBallDestroyAudio;
+
+        OnBallDestroy -= DestroyCopyBall ;
+        OnBallDestroy -= PlayBallDestroyAudio;
     }
 
     private void FixedUpdate()
@@ -120,10 +128,6 @@ public class Ball : MonoBehaviour
         if (pushLockTimer > 0f)
             pushLockTimer = Mathf.Max(0f, pushLockTimer - Time.fixedDeltaTime);
 
-        // 1) Apply attraction if active and not locked
-        if (isAttracted && pushLockTimer <= 0f)
-            HandleAttraction();
-
         // 2) Homing behavior (as before)
         if (_currentDelayTime < 0)
             ApplyHoming();
@@ -131,117 +135,10 @@ public class Ball : MonoBehaviour
             _currentDelayTime -= Time.deltaTime;
 
         // 3) Clamp speed
-        if (_rigRigidbody.linearVelocity.magnitude > _maxVelocity)
+        if (_rigidbody.linearVelocity.magnitude > _maxVelocity)
         {
-            _rigRigidbody.linearVelocity = Vector2.ClampMagnitude(_rigRigidbody.linearVelocity, _maxVelocity);
+            _rigidbody.linearVelocity = Vector2.ClampMagnitude(_rigidbody.linearVelocity, _maxVelocity);
         }
-    }
-
-    void HandleAttraction()
-    {
-        if (_rigRigidbody == null) return;
-
-        Vector2 to = attractorPos - _rigRigidbody.position;
-        float dist = to.magnitude;
-
-        // safety: if out of radius, stop attraction
-        if (dist > attractRadius)
-        {
-            StopAttraction();
-            return;
-        }
-
-        // --- rotate slowly toward attractor direction ---
-        Vector2 desiredDir = to.normalized;
-        _attractDesiredDir = desiredDir; // cache (also updated by UpdateAttractionTarget)
-        float rotT = Mathf.Clamp01(_attractRotationSpeed * Time.fixedDeltaTime);
-        // Slerp the transform.up vector toward desired direction (2D)
-        Vector3 currentUp = transform.up;
-        Vector3 desiredUp = new Vector3(desiredDir.x, desiredDir.y, 0f);
-        Vector3 newUp = Vector3.Slerp(currentUp, desiredUp, rotT).normalized;
-        if (newUp.sqrMagnitude > 0.0001f)
-            transform.up = newUp;
-
-        // --- compute attraction force as before ---
-        float t = Mathf.Clamp01(1f - (dist / attractRadius)); // 0 far, 1 near
-        float pull = attractStrength * (t * 0.9f + 0.1f); // never completely zero
-
-        Vector2 forceVec = desiredDir * pull;
-
-        // clamp force magnitude per FixedUpdate to the configured cap
-        if (attractForceCap > 0f)
-            forceVec = Vector2.ClampMagnitude(forceVec, attractForceCap);
-
-        // apply as acceleration-like force
-        _rigRigidbody.AddForce(forceVec, ForceMode2D.Force);
-
-        // record last pull
-        lastPullApplied = forceVec;
-
-        // update attractor position if it follows a transform
-        if (attractorTransform != null)
-            attractorPos = attractorTransform.position;
-    }
-
-    // Suction API for Ball (existing)
-    public void StartAttraction(Transform targetTransform, float strength, float radius, float maxForce)
-    {
-        attractorTransform = targetTransform;
-        attractorPos = targetTransform.position;
-        attractRadius = Mathf.Max(0.01f, radius);
-        attractStrength = strength;
-        attractForceCap = Mathf.Max(0f, maxForce);
-        isAttracted = true;
-        _rigRigidbody.linearDamping = attractedDrag;
-
-        // set initial desired direction and nudge rotation a tiny bit toward it (so rotation begins immediately)
-        Vector2 initialTo = attractorPos - (Vector2)transform.position;
-        if (initialTo.sqrMagnitude > 0.0001f)
-        {
-            _attractDesiredDir = initialTo.normalized;
-            float initT = Mathf.Clamp01(_attractRotationSpeed * Time.deltaTime);
-            Vector3 newUp = Vector3.Slerp(transform.up, new Vector3(_attractDesiredDir.x, _attractDesiredDir.y, 0f), initT).normalized;
-            if (newUp.sqrMagnitude > 0.0001f)
-                transform.up = newUp;
-        }
-    }
-
-    public void UpdateAttractionTarget(Vector2 targetPosition)
-    {
-        attractorPos = targetPosition;
-        // also update desired direction so rotation continues to track moving targets
-        Vector2 to = attractorPos - (Vector2)transform.position;
-        if (to.sqrMagnitude > 0.0001f)
-            _attractDesiredDir = to.normalized;
-    }
-
-    public void StopAttraction()
-    {
-        isAttracted = false;
-        attractorTransform = null;
-        // restore normal drag
-        _rigRigidbody.linearDamping = normalDrag;
-    }
-
-    public void ApplyPush(Vector2 origin, float impulseMagnitude, float lockDuration)
-    {
-        if (_rigRigidbody == null) return;
-
-        // compute direction away from origin
-        Vector2 dir = ((Vector2)transform.position - origin);
-        float dist = dir.magnitude;
-        if (dist <= 0.0001f)
-            dir = UnityEngine.Random.insideUnitCircle.normalized;
-        else
-            dir /= dist;
-
-        // apply impulse (impulseMagnitude already can take falloff from caller)
-        Vector2 impulse = dir * impulseMagnitude;
-        _rigRigidbody.AddForce(impulse, ForceMode2D.Impulse);
-
-        // cancel attraction and apply lock
-        StopAttraction();
-        pushLockTimer = Mathf.Max(pushLockTimer, lockDuration);
     }
 
     // ---------- rest of your original Ball script methods unchanged ----------
@@ -250,7 +147,7 @@ public class Ball : MonoBehaviour
         // basic sanity checks
         if (_brickPool == null) return;
 
-        Vector2 vel = _rigRigidbody.linearVelocity;
+        Vector2 vel = _rigidbody.linearVelocity;
         float speed = vel.magnitude;
         if (speed < 0.01f) return; // not moving
 
@@ -273,24 +170,24 @@ public class Ball : MonoBehaviour
         float s = _homingStrength;
         Vector2 newDir = Vector2.Lerp(dir, toTarget, s).normalized;
         // preserve speed
-        _rigRigidbody.linearVelocity = newDir * speed;
+        _rigidbody.linearVelocity = newDir * speed;
     }
 
     public void SetHomingValue(float value) => _homingStrength = value;
 
     public void ResetPosition()
     {
-        if (_copyBall)
-        {
-            Destroy(gameObject);
-        }
-        else
-        {
-            _spriteRenderer.enabled = false;
-            _abilityManager.NotifyBallDestroyed(this);
-            ResetCombo();
-            StartCoroutine(ResettingBall());
-        }
+        _spriteRenderer.enabled = false;
+        _abilityManager.NotifyBallDestroyed(this);
+        ResetCombo();
+        StartCoroutine(ResettingBall());
+    }
+
+    public void DestroyCopyBall()
+    {
+        _abilityManager.NotifyBallDestroyed(this);
+        Destroy(gameObject);
+
     }
     IEnumerator ResettingBall()
     {
@@ -299,7 +196,7 @@ public class Ball : MonoBehaviour
         transform.position = _respawnPos.position;
         StartCoroutine(AnimateBallRespawn());
         _spriteRenderer.enabled = true;
-        _rigRigidbody.linearVelocity = Vector2.down * _gravityScale;
+        _rigidbody.linearVelocity = Vector2.down * _gravityScale;
     }
 
     IEnumerator AnimateBallRespawn()

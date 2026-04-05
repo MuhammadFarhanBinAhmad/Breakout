@@ -1,5 +1,7 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
+
 
 public class TowerUIManager : MonoBehaviour
 {
@@ -7,8 +9,10 @@ public class TowerUIManager : MonoBehaviour
 
     [Header("TowerUI")]
     [SerializeField] TextMeshProUGUI _currentTowerHeightText;
+    [SerializeField] Image _brickFillImage, _floorFillImage;
+
+
     [Header("EssenceUI")]
-    [SerializeField] TextMeshProUGUI _currentEssenceText;
     [SerializeField] TextMeshProUGUI _currentPureEssenceText;
     [Header("GameOverScreen")]
     public GameObject _gameOverScreen;
@@ -20,7 +24,7 @@ public class TowerUIManager : MonoBehaviour
     }
     void Start()
     {
-        _towerManager.OnHeightIncrease += UpdateTowerUI;
+        _towerManager.OnEssenceCollect += UpdateTowerUI;
         _towerManager.OnEssenceCollect += UpdateEssenceUI;
         _towerManager._OnGameOver += GameOverScreen;
         UpdateTowerUI();
@@ -28,19 +32,20 @@ public class TowerUIManager : MonoBehaviour
     }
     private void OnDisable()
     {
-        _towerManager.OnHeightIncrease -= UpdateTowerUI;
+        _towerManager.OnEssenceCollect -= UpdateTowerUI;
         _towerManager.OnEssenceCollect -= UpdateEssenceUI;
         _towerManager._OnGameOver -= GameOverScreen;
     }
     public void GameOverScreen() => _gameOverScreen.SetActive(true);
     public void UpdateTowerUI()
     {
+        _floorFillImage.fillAmount = (float)_towerManager.GetCurrentBrickCount() / (float)_towerManager.GetBrickFloorConversionRate();
         _currentTowerHeightText.text = "Height: " + _towerManager._currentTowerHeight.ToString() + " M";
+
     }
     public void UpdateEssenceUI()
     {
-        _currentEssenceText.text = "Essence: " + _towerManager._currentEssenceCount.ToString() + " / " +
-                                    _towerManager._essenceThreshold.ToString();
-        _currentPureEssenceText.text = "Pure Essence: " + _towerManager._currentPureEssence.ToString();
+        _brickFillImage.fillAmount = (float)_towerManager.GetCurrentEssence() / (float)_towerManager.GetEssencePureEssenceConversionRate();
+        _currentPureEssenceText.text = "PE: " + _towerManager._currentPureEssence.ToString();
     }
 }

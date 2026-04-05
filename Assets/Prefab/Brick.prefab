@@ -191,6 +191,7 @@ GameObject:
   - component: {fileID: 218326084500640645}
   - component: {fileID: 9117155628922900499}
   - component: {fileID: 3370432073450436763}
+  - component: {fileID: 725627600320107129}
   m_Layer: 8
   m_Name: Brick
   m_TagString: Brick
@@ -274,6 +275,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 81e381dbdeabb1e44a794e361ff29cdc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BrickBar
+  _modifiers: []
   _destroyParticleEffect: {fileID: 5898855646081462555, guid: 3790ba9352a78ec46888c43db5de9e47, type: 3}
   _health: 1
   _shield: 0
@@ -281,6 +283,19 @@ MonoBehaviour:
   _fallSpeed: 1
   _essenceMinAmountToSpawn: 1
   _essenceMaxAmountToSpawn: 3
+--- !u!114 &725627600320107129
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5469620576531411634}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 65900f7ab9d8b534ea86a83e2bf3dc62, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PaddleReflection
+  _maxBounceAngle: 75
 --- !u!1 &7079939377503182275
 GameObject:
   m_ObjectHideFlags: 0

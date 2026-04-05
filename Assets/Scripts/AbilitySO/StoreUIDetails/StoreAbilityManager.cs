@@ -71,7 +71,7 @@ public class StoreAbilityManager : MonoBehaviour
 
         int price = _abilityLevelState[abilityLevel].GetPrice();
 
-        if (_towerManager.GetTotalPureEssence() < price)
+        if (_towerManager.GetTotalPureEssenceCount() < price)
             return false;
 
         if (!ability._availableToPurchaseAtStart)

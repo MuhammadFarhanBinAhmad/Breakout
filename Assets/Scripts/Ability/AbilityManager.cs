@@ -124,7 +124,6 @@ public class AbilityManager : MonoBehaviour
         {
             _brick = brick,
             _baseDamage = basedmg,
-            _finaleDamage = basedmg,
             _isCrit = false,
         };
 
@@ -137,7 +136,7 @@ public class AbilityManager : MonoBehaviour
             ability.OnHit(ctx);
 
         // Phase 3: Apply damage
-        brick.OnDamage(ctx._finaleDamage);
+        brick.OnDamage(ctx._baseDamage);
 
         // Phase 4: Notify abilities of outcome
         foreach (var ability in _brickAbilities)
