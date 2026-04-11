@@ -13,7 +13,12 @@ public enum StatusType
     DISCHARGE,
     STUN
 }
-
+public enum DeathCause
+{
+    NORMAL,
+    PADDLE,
+    TOWER
+}
 [System.Serializable]
 public class StatusInstance
 {
@@ -62,6 +67,7 @@ public class BrickBar : MonoBehaviour
     List<SpriteRenderer> _spritesRenderer = new List<SpriteRenderer>();
 
     bool pendingDeath;
+    DeathCause pendingDeathCause;
 
     public Action _onDeath;
     public Action _onDeathByPaddle;
@@ -134,7 +140,28 @@ public class BrickBar : MonoBehaviour
 
 
         if (pendingDeath)
-            _onDeath?.Invoke();
+            ResolveDeath();
+    }
+    void ResolveDeath()
+    {
+        switch (pendingDeathCause)
+        {
+            case DeathCause.NORMAL:
+                {
+                    _onDeath?.Invoke();
+                    break;
+                }
+            case DeathCause.TOWER:
+                {
+                    _onDeathByTower?.Invoke();
+                    break;
+                }
+            case DeathCause.PADDLE:
+                {
+                    _onDeathByPaddle?.Invoke();
+                    break;
+                }
+        }
 
     }
 
@@ -195,7 +222,7 @@ public class BrickBar : MonoBehaviour
             _statuses.Remove(key);
         }
     }
-    public void OnDamage(int dmg)
+    public void OnDamage(int dmg,DeathCause deathcause = DeathCause.NORMAL)
     {
         int modified = dmg;
         for (int i = 0; i < _modifiers.Count; i++)
@@ -211,12 +238,14 @@ public class BrickBar : MonoBehaviour
         print("DAMAGE: " + modified);
 
         _health -= modified;
+        UpdateColourByHealth();
 
         for (int i = 0; i < _modifiers.Count; i++)
             _modifiers[i]?.OnDamageApplied(modified);
 
         if (_health <= 0)
         {
+            pendingDeathCause = deathcause;
             pendingDeath = true;
         }
         else
@@ -227,6 +256,8 @@ public class BrickBar : MonoBehaviour
 
     void HandleDeath()
     {
+        GlobalFeedbackManager.Instance.SetSizeCapForBrickDestroy();
+        GlobalFeedbackManager.Instance.PlayGlobalFeedback?.Invoke();
 
         abilityManager.NotifyBrickDestroyed(this);
         _brickPool.RemoveActiveBrick(this.gameObject);
@@ -316,6 +347,16 @@ public class BrickBar : MonoBehaviour
         for(int i=0; i< _spritesRenderer.Count; i++)
             _spritesRenderer[i].color = color;
     }
+    void UpdateColourByHealth()
+    {
+        if (_brickGenerator == null)
+            return;
+
+        SO_BrickHealthStats stats = _brickGenerator.GetStatsForHealth(_health);
+        if (stats != null)
+            ChangeSpiteColour(stats._color);
+
+    }
     public void SetBrick(SO_BrickHealthStats _stats)
     {
         _startingHealth = _stats._health;
@@ -363,5 +404,5 @@ public class BrickBar : MonoBehaviour
         }
     }
     public void Heal(int amount) => _health = Mathf.Min(_health + amount, _startingHealth);
-
+    public int GetHealth() => _health;
 }

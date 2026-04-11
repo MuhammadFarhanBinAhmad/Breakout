@@ -32,6 +32,7 @@ public class BrickPool : MonoBehaviour
         {
             if (!brick.activeSelf)
             {
+                brick.transform.localScale = Vector3.one;
                 brick.SetActive(true);
                 return brick;
             }

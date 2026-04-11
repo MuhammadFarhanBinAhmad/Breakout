@@ -86,7 +86,7 @@ public class PaddleHealth : MonoBehaviour
         if (other.GetComponentInChildren<BrickBar>() !=null && _spriteRenderer.enabled)
         {
             _paddleFeedbackManager.OnBeingKnockBack?.Invoke();
-            other.GetComponentInChildren<BrickBar>()._onDeathByPaddle?.Invoke();
+            other.GetComponentInChildren<BrickBar>().OnDamage(999,DeathCause.PADDLE);
             StartCoroutine(Knockback());
         }
     }

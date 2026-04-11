@@ -42,7 +42,7 @@ public class TowerManager : MonoBehaviour
     public int[] _towerHeightCheck;
     bool _receiveWarning;
 
-    Action _onTowerTakingDamage;
+    public Action _onTowerTakingDamage;
 
 
     void Awake()
@@ -203,16 +203,6 @@ public class TowerManager : MonoBehaviour
             }
         }
 
-    }
-    private void OnTriggerEnter2D(Collider2D other)
-    {
-        BrickBar _bb = other.GetComponent<BrickBar>();
-
-        if (_bb != null)
-        {
-            _bb._onDeathByTower?.Invoke();
-            _onTowerTakingDamage?.Invoke();
-        }
     }
     public int GetCurrentEssence() => _currentEssenceCount;
     public void DeductPureEssence(int value) => _currentPureEssence -= value;

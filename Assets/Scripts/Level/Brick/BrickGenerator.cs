@@ -39,9 +39,16 @@ public class BrickGenerator : MonoBehaviour
     [SerializeField] int _lastAttributePoints;
     public int[] _attributePoints;
     int _APPerWaveForTheDay;
+
     [Header("Brick position")]
     public Vector2Int _size;
     public Vector2 _offset;
+
+    [Header("BrickSpawn")]
+    [SerializeField] AnimationCurve easeOutElastic;
+    [SerializeField] float animationDuration;
+    [SerializeField] float _capscaleMultiplier;
+    Vector3 _startingScale = new Vector3(1,1,1);
 
     [Header("Level and Wave")]
     public List<int> _spawnedWaves = new List<int>();
@@ -55,14 +62,14 @@ public class BrickGenerator : MonoBehaviour
     [SerializeField] float _timerBeforeNextWaveSpawn;
     public Action _onSpawnNextWave;
 
-
     private void Awake()
     {
         _brickPool = GetComponent<BrickPool>();
         _timeManager = FindAnyObjectByType<TimeManager>();
-        _onSpawnNextWave += SpawnNextWave;
         _timeManager._dayPass += CheckBrickToAdd;
         _timeManager._dayPass += SetAPOfTheDay;
+        _onSpawnNextWave += SpawnNextWave;
+
 
         SetAttributePointForEachPhase();
 
@@ -158,34 +165,50 @@ public class BrickGenerator : MonoBehaviour
         int x = 0;
         int y = 0;
 
+        string test = "";
         foreach (char c in formation.formation)
         {
-            x++;
-            
+            test += c;
+        }
+        print(test);
+
+        foreach (char c in formation.formation)
+        {
+            if (c == '0')
+            {
+                x++;
+                print("hit0");
+                continue;
+            }
             if (c == '1')
             {
                 if (_currentWaveAP <= 0)
                 {
                     break;
                 }
+                x++;
+                print("hit1");
                 GameObject brick = _brickPool.GetBrick();
                 _brickPool.PlaceActiveBrickInList(brick);
                 BrickBar bb = brick.GetComponent<BrickBar>();
-
+                brick.transform.localScale = _startingScale;
                 brick.transform.position =
                     transform.position +
                     new Vector3(_offset.x * (x + 0.5f), _offset.y * (y + 0.5f));
 
                 SetBrickStats(bb);
                 _brickCounter++;
-
+                StartCoroutine(AnimateBrickSpawn(brick.transform));
+                continue;
             }
 
             if (c == '\n')
             {
-                yield return new WaitForSeconds(_timerBeforeNextLineSpawn);
+                print("hit3");
                 y++;
                 x = 0;
+                yield return new WaitForSeconds(_timerBeforeNextLineSpawn);
+
             }
         }
 
@@ -209,7 +232,43 @@ public class BrickGenerator : MonoBehaviour
             }
         }
     }
+    public SO_BrickHealthStats GetStatsForHealth(int currentHealth)
+    {
+        if (_brickTypesList == null || _brickTypesList.Count == 0)
+            return null;
 
+        // Pick the highest health tier that is still <= currentHealth
+        SO_BrickHealthStats best = null;
+
+        for (int i = 0; i < _brickTypesList.Count; i++)
+        {
+            var stats = _brickTypesList[i];
+
+            if (stats == null)
+                continue;
+
+            if (stats._health <= currentHealth)
+            {
+                if (best == null || stats._health > best._health)
+                    best = stats;
+            }
+        }
+
+        // Fallback: if currentHealth is lower than all tiers, use the lowest one
+        if (best == null)
+        {
+            for (int i = 0; i < _brickTypesList.Count; i++)
+            {
+                var stats = _brickTypesList[i];
+                if (stats == null) continue;
+
+                if (best == null || stats._health < best._health)
+                    best = stats;
+            }
+        }
+
+        return best;
+    }
     void SetBrickStats(BrickBar _bb)
     {
         List<SO_BrickHealthStats> bhs = new List<SO_BrickHealthStats>();
@@ -235,5 +294,28 @@ public class BrickGenerator : MonoBehaviour
         //_bb.AddModifier(_brickModifier[0]);
 
         _currentWaveAP -= stats._APValue;
+    }
+
+
+    IEnumerator AnimateBrickSpawn(Transform brickTransform)
+    {
+        Vector3 startScale = Vector3.zero;
+        Vector3 targetScale = _startingScale * _capscaleMultiplier;
+
+        float time = 0f;
+
+        while (time < animationDuration)
+        {
+            float normalized = time / animationDuration;
+            float curveValue = easeOutElastic.Evaluate(normalized);
+
+            brickTransform.localScale =
+                Vector3.LerpUnclamped(startScale, targetScale, curveValue);
+
+            time += Time.deltaTime;
+            yield return null;
+        }
+
+        brickTransform.localScale = _startingScale;
     }
 }

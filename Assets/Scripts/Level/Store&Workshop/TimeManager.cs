@@ -49,7 +49,8 @@ public class TimeManager : MonoBehaviour
         return 1f - (_currentDayDuration / _fullDayDuration);
     }
     public static void StopTime() => Time.timeScale = 0f;
-    public static void StartTime() => Time.timeScale = 1f;
+    public static void ResetTimeScale() => Time.timeScale = 1f;
+    public static void SetCustomTimeScale(float val) => Time.timeScale = val;
     public float GetCurrentRealTime () => _currentRealTimePass;
     public int GetTotalDayPass() => _totalDayPass;
     public int GetMaxGameDuration() => _maxGameDuration;

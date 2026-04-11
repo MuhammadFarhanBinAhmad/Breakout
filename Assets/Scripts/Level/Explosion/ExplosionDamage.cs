@@ -12,6 +12,8 @@ public class ExplosionDamage : MonoBehaviour
     int _damage;
     bool _hasExploded = false;
 
+    [SerializeField] float _camShakeStrength;
+
     private void Start()
     {
         _startScale = new Vector3(1,1,1);

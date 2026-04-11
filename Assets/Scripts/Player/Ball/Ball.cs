@@ -30,6 +30,7 @@ public class Ball : MonoBehaviour
     [Header("Damage")]
     [SerializeField] int _baseDamage;
     internal int _damageValueModifier;
+    [SerializeField] float _camShakeStrength;
 
 
     [Header("Combo")]
@@ -49,34 +50,31 @@ public class Ball : MonoBehaviour
     [SerializeField] float _homingStrength = 0.08f;
     [SerializeField] float _minVerticalForHoming = 0.25f;
     [SerializeField] float _homingMaxDistance = 12f;
+
+    [Header("AimingState")]
+    [SerializeField] float _lerpSpeed;
+    [SerializeField] float _slowMotionTimeValue;
+    [SerializeField] float _coolDownPeriod;
+    [SerializeField] int _manaShootCost;
+    float _currentTimeScale = 1f;
+    float _targetTimeScale = 1f;
+    float _currentTargetTimeScale;
+    float _currentCoolDownPeriod;
+    Coroutine _timeScaleRoutine;
+    bool _onAimingState;
+
+    [Header("ManaBar")]
+    [SerializeField] float _maxManaAmount;
+    [SerializeField] float _currentManaAmount;
+    [SerializeField] float _manaRegenRate;
+
     [Header("RespawnAnimation")]
     [SerializeField] AnimationCurve easeOutElastic;
-    Vector3 _startingScale;
     [SerializeField] float animationDuration;
     [SerializeField] float _capscaleMultiplier;
-    // -------------------------
-    // Attraction fields (vacuum)
-    // -------------------------
-    [Header("Attraction (vacuum)")]
-    bool isAttracted = false;
-    Vector2 attractorPos;
-    Transform attractorTransform;
-    float attractRadius = 1f;
-    float attractStrength = 0f;
-    float attractForceCap = 0f;            // max force applied per FixedUpdate
-    [Tooltip("Drag while being attracted (lower = less braking).")]
-    [SerializeField] float attractedDrag = 0.2f;
-    [Tooltip("Normal drag when not being attracted.")]
-    [SerializeField] float normalDrag = 1f;
-
-    // rotation while attracted: how fast the ball turns toward the attractor
-    [Tooltip("How quickly the ball rotates to face the attractor (higher = faster).")]
-    [SerializeField] float _attractRotationSpeed = 5f; // tweak in Inspector
-    Vector2 _attractDesiredDir = Vector2.up;
-    Vector2 lastPullApplied = Vector2.zero;
-
-
-
+    [SerializeField] Camera _gameCamera;
+    [SerializeField] bool _enableMouseRedirect = true;
+    Vector3 _startingScale;
 
     // -------------------------
     // Push lock (prevents immediate re-attraction)
@@ -105,9 +103,9 @@ public class Ball : MonoBehaviour
     {
         // initial downward velocity - preserve your original intent
         _rigidbody.linearVelocity = Vector2.down * _gravityScale;
-        _rigidbody.linearDamping = normalDrag;
 
         _startingScale = transform.localScale;
+        _currentManaAmount = _maxManaAmount;
     }
     private void OnDisable()
     {
@@ -118,30 +116,91 @@ public class Ball : MonoBehaviour
         OnBallReset -= ResetPosition;
         OnBallReset -= PlayBallDestroyAudio;
 
-        OnBallDestroy -= DestroyCopyBall ;
+        OnBallDestroy -= DestroyCopyBall;
         OnBallDestroy -= PlayBallDestroyAudio;
     }
 
     private void FixedUpdate()
     {
-        // decrement push lock timer
         if (pushLockTimer > 0f)
             pushLockTimer = Mathf.Max(0f, pushLockTimer - Time.fixedDeltaTime);
 
-        // 2) Homing behavior (as before)
         if (_currentDelayTime < 0)
             ApplyHoming();
         else
             _currentDelayTime -= Time.deltaTime;
 
-        // 3) Clamp speed
         if (_rigidbody.linearVelocity.magnitude > _maxVelocity)
-        {
             _rigidbody.linearVelocity = Vector2.ClampMagnitude(_rigidbody.linearVelocity, _maxVelocity);
-        }
+
+        if (!_enableMouseRedirect) return;
+        HandleTimeScaleInput();
+        HandleManaRegen();
     }
 
-    // ---------- rest of your original Ball script methods unchanged ----------
+    void HandleTimeScaleInput()
+    {
+        if (Input.GetMouseButton(1) && _currentCoolDownPeriod >= _coolDownPeriod) // holding
+        {
+            _onAimingState = true;
+            _targetTimeScale = _slowMotionTimeValue;
+        }
+        else // released
+        {
+            _onAimingState = false;
+            _targetTimeScale = 1f;
+            if (_currentCoolDownPeriod < _coolDownPeriod)
+                _currentCoolDownPeriod += Time.deltaTime;
+        }
+        _currentTimeScale = Mathf.Lerp(_currentTimeScale, _targetTimeScale, Time.unscaledDeltaTime * _lerpSpeed);
+        TimeManager.SetCustomTimeScale(_currentTimeScale);
+
+        if (_onAimingState && Input.GetMouseButton(0))
+            RedirectBallToMouse();
+    }
+    void HandleManaRegen()
+    {
+        if (_currentManaAmount < _maxManaAmount)
+            _currentManaAmount += _manaRegenRate * Time.deltaTime;
+
+    }
+
+    void RedirectBallToMouse()
+    {
+        if (_currentManaAmount < _manaShootCost)
+        {
+            //UI pop message
+            return;
+        }
+
+        if (_gameCamera == null)
+            _gameCamera = Camera.main;
+
+        if (_gameCamera == null) return;
+
+        Vector3 mouseScreen = Input.mousePosition;
+        mouseScreen.z = -_gameCamera.transform.position.z;
+
+        Vector2 mouseWorld = _gameCamera.ScreenToWorldPoint(mouseScreen);
+
+        Vector2 direction = mouseWorld - (Vector2)transform.position;
+
+        if (direction.sqrMagnitude < 0.0001f)
+            return;
+
+        direction.Normalize();
+
+        float speed = _rigidbody.linearVelocity.magnitude;
+        if (speed < 0.01f)
+            speed = _gravityScale;
+
+        _rigidbody.linearVelocity = direction * speed;
+
+        transform.up = -direction;
+
+        _currentCoolDownPeriod = 0;
+        MinusMana(_manaShootCost);
+    }
     void ApplyHoming()
     {
         // basic sanity checks
@@ -172,9 +231,6 @@ public class Ball : MonoBehaviour
         // preserve speed
         _rigidbody.linearVelocity = newDir * speed;
     }
-
-    public void SetHomingValue(float value) => _homingStrength = value;
-
     public void ResetPosition()
     {
         _spriteRenderer.enabled = false;
@@ -241,6 +297,7 @@ public class Ball : MonoBehaviour
     {
         if (other.gameObject.CompareTag("Wall") || other.gameObject.CompareTag("Paddle") || other.gameObject.CompareTag("Brick"))
         {
+            GlobalFeedbackManager.Instance.SetSizeCapForBall();
             GlobalFeedbackManager.Instance.PlayGlobalFeedback?.Invoke();
             OnBallHit?.Invoke();
 
@@ -276,4 +333,47 @@ public class Ball : MonoBehaviour
     }
     //HELPER
     public int GetBallBaseDamage() => _baseDamage;
+    public void SetTimeScaleSmooth(float target, float duration)
+    {
+        if (Mathf.Approximately(_currentTargetTimeScale, target))
+            return;
+
+        _currentTargetTimeScale = target;
+
+        if (_timeScaleRoutine != null)
+            StopCoroutine(_timeScaleRoutine);
+
+        _timeScaleRoutine = StartCoroutine(LerpTimeScale(target, duration));
+    }
+    IEnumerator LerpTimeScale(float target, float duration)
+    {
+        float start = Time.timeScale;
+        float time = 0f;
+
+        while (time < duration)
+        {
+            float t = time / duration;
+            float newScale = Mathf.Lerp(start, target, t);
+
+            TimeManager.SetCustomTimeScale(newScale);
+
+            time += Time.unscaledDeltaTime; // IMPORTANT
+            yield return null;
+        }
+
+        TimeManager.SetCustomTimeScale(target);
+    }
+    void MinusMana(int val)
+    {
+        _currentManaAmount = -val;
+        if (_currentManaAmount < 0)
+        {
+            _currentManaAmount = 0;
+        }
+    }
+    public void SetHomingValue(float value) => _homingStrength = value;
+    public float GetCurrentManaAmount() => _currentManaAmount;
+    public float GetMaxManaAmount() => _maxManaAmount;
+
+
 }

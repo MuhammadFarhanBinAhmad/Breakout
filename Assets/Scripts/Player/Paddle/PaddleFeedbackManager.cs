@@ -65,7 +65,7 @@ public class PaddleFeedbackManager : MonoBehaviour
     private void Start()
     {
         _startingScale = transform.localScale;
-        StartBreathing();
+        //StartBreathing();
 
     }
     private void OnDisable()
@@ -128,14 +128,14 @@ public class PaddleFeedbackManager : MonoBehaviour
         _paddleHitRoutine = StartCoroutine(AnimatePaddleRespawn());
     }
 
-    void StartBreathing()
-    {
-        if (_breathingRoutine != null)
-            StopCoroutine(_breathingRoutine);
+    //void StartBreathing()
+    //{
+    //    if (_breathingRoutine != null)
+    //        StopCoroutine(_breathingRoutine);
 
-        _isBreathing = true;
-        _breathingRoutine = StartCoroutine(AnimateBreathingRoutine());
-    }
+    //    _isBreathing = true;
+    //    _breathingRoutine = StartCoroutine(AnimateBreathingRoutine());
+    //}
 
     void StopBreathing()
     {
@@ -149,21 +149,21 @@ public class PaddleFeedbackManager : MonoBehaviour
 
         transform.localScale = _startingScale;
     }
-    IEnumerator AnimateBreathingRoutine()
-    {
-        float time = 0f;
+    //IEnumerator AnimateBreathingRoutine()
+    //{
+    //    float time = 0f;
 
-        while (_isBreathing)
-        {
-            time += Time.deltaTime * _breathSpeed;
+    //    while (_isBreathing)
+    //    {
+    //        time += Time.deltaTime * _breathSpeed;
 
-            float scaleOffset = Mathf.Sin(time) * _breathScaleAmount;
-            transform.localScale = _startingScale * (1f + scaleOffset);
+    //        float scaleOffset = Mathf.Sin(time) * _breathScaleAmount;
+    //        transform.localScale = _startingScale * (1f + scaleOffset);
 
-            yield return null;
-        }
+    //        yield return null;
+    //    }
 
-    }
+    //}
     IEnumerator AnimatePaddleHit(float ballSpeed)
     {
 
@@ -195,7 +195,7 @@ public class PaddleFeedbackManager : MonoBehaviour
         }
 
         transform.localScale = _startingScale;
-        StartBreathing();
+        //StartBreathing();
     }
     IEnumerator AnimatePaddleHit()
     {
@@ -217,7 +217,7 @@ public class PaddleFeedbackManager : MonoBehaviour
         }
 
         transform.localScale = _startingScale;
-        StartBreathing();
+        //StartBreathing();
     }
     IEnumerator AnimatePaddleRespawn()
     {
@@ -239,7 +239,7 @@ public class PaddleFeedbackManager : MonoBehaviour
         }
 
         transform.localScale = _startingScale;
-        StartBreathing();
+        //StartBreathing();
     }
     void PlayFreezeFrame()
     {

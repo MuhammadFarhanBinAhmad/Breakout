@@ -5030,6 +5030,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88953c8a12d36d948b10e8b0a4e39cc2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExplosionDamage
+  _camShakeStrength: 2
 --- !u!50 &6355230693770959371
 Rigidbody2D:
   serializedVersion: 5

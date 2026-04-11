@@ -4,9 +4,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static UnityEngine.Rendering.VirtualTexturing.Debugging;
 
 public class GlobalFeedbackManager : MonoBehaviour
 {
+
 
     public Action PlayGlobalFeedback;
 
@@ -20,14 +22,29 @@ public class GlobalFeedbackManager : MonoBehaviour
     [SerializeField] AnimationCurve easeOutElastic;
     [SerializeField] float animationDuration;
     [SerializeField] float _startingscaleMultiplier;
-    [SerializeField] float _capscaleMultiplier, ballScaleMultiplier;
+    [Header("BallHit")]
+    public float _ballHitPaddleTargetScale;
+    public float _ballHitWallTargetScale;
+    public float _ballHitBallTargetScale;
+    public float _ballHitBrickTargetScale;
+
+    [Header("BrickDestroy")]
+    public float _brickDestroyPaddleTargetScale;
+    public float _brickDestroyWallTargetScale;
+    public float _brickDestroyBallTargetScale;
+    public float _brickDestroyBrickTargetScale;
+
+
+    float _paddleScaleMultiplier, _ballScaleMultiplier, _wallScaleMultipler, _brickScaleMultipler;
     Coroutine _shakeWorldRoutine;
 
     // cached originals
-    Vector3 ballOriginalScale;
-    Vector3 paddleOriginalScale;
+    Vector3 ballOriginalScale = new Vector3(1, 1, 1);
+    Vector3 paddleOriginalScale = new Vector3(1,1,1);
     Vector3[] wallOriginalScales = Array.Empty<Vector3>();
     Vector3[] brickOriginalScales = Array.Empty<Vector3>();
+
+
 
     public static GlobalFeedbackManager Instance { get; private set; }
     private void Awake()
@@ -36,9 +53,7 @@ public class GlobalFeedbackManager : MonoBehaviour
             print("more than one instance in the scene");
 
         Instance = this;
-    }
-    private void Start()
-    {
+
         _brickPool = FindAnyObjectByType<BrickPool>();
 
         // fallback finds if not assigned in inspector (only once)
@@ -124,17 +139,18 @@ public class GlobalFeedbackManager : MonoBehaviour
         float time = 0f;
 
         // precompute targets
-        Vector3 paddleTarget = paddleOriginalScale * _capscaleMultiplier;
+        Vector3 paddleTarget = paddleOriginalScale * _paddleScaleMultiplier;
         Vector3 paddleStart = paddleOriginalScale * _startingscaleMultiplier;
 
-        Vector3 ballTarget = ballOriginalScale * ballScaleMultiplier;
+        Vector3 ballTarget = ballOriginalScale * _ballScaleMultiplier;
         Vector3 ballStart = ballOriginalScale * _startingscaleMultiplier;
 
         Vector3[] wallTargets = new Vector3[wallOriginalScales.Length];
         Vector3[] wallStarts = new Vector3[wallOriginalScales.Length];
+
         for (int i = 0; i < wallOriginalScales.Length; i++)
         {
-            wallTargets[i] = wallOriginalScales[i] * _capscaleMultiplier;
+            wallTargets[i] = wallOriginalScales[i] * _wallScaleMultipler;
             wallStarts[i] = wallOriginalScales[i] * _startingscaleMultiplier;
         }
 
@@ -142,7 +158,7 @@ public class GlobalFeedbackManager : MonoBehaviour
         Vector3[] brickStarts = new Vector3[brickOriginalScales.Length];
         for (int i = 0; i < brickOriginalScales.Length; i++)
         {
-            brickTargets[i] = brickOriginalScales[i] * _capscaleMultiplier;
+            brickTargets[i] = brickOriginalScales[i] * _brickScaleMultipler;
             brickStarts[i] = brickOriginalScales[i] * _startingscaleMultiplier;
         }
 
@@ -166,6 +182,8 @@ public class GlobalFeedbackManager : MonoBehaviour
                 if (wt == null) continue;
                 wt.localScale = Vector3.LerpUnclamped(wallStarts[i], wallTargets[i], curveValue);
             }
+
+            //bricks
             for(int i=0; i < _brickTransforms.Length;i++)
             {
                 var bt = _brickTransforms[i];
@@ -190,5 +208,20 @@ public class GlobalFeedbackManager : MonoBehaviour
                 _wallTransforms[i].localScale = wallOriginalScales[i];
 
         _shakeWorldRoutine = null;
+    }
+    public void SetSizeCapForBall()
+    {
+        _ballScaleMultiplier = _ballHitBallTargetScale;
+        _paddleScaleMultiplier = _ballHitPaddleTargetScale;
+        _wallScaleMultipler = _ballHitWallTargetScale;
+        _brickScaleMultipler = _ballHitBrickTargetScale;
+    }
+    public void SetSizeCapForBrickDestroy()
+    {
+        _ballScaleMultiplier = _brickDestroyBallTargetScale;
+        _paddleScaleMultiplier = _brickDestroyPaddleTargetScale;
+        _wallScaleMultipler = _brickDestroyWallTargetScale;
+        _brickScaleMultipler = _brickDestroyBrickTargetScale;
+
     }
 }
