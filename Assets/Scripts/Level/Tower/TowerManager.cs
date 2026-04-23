@@ -13,7 +13,7 @@ public class TowerManager : MonoBehaviour
     [Tooltip("Current threshold; starts at initial and is increased on milestones.")]
     public int _essenceToPureEssenceConversionRate;
     public int _currentEssenceCount;
-    internal int _currentPureEssence;
+    internal int _currentPureEssence { get; private set; }
     public Action OnEssenceCollect;
 
     [Header("Essence scaling (milestones)")]
@@ -33,8 +33,8 @@ public class TowerManager : MonoBehaviour
     [Header("Layer")]
     public int _currentTowerHeight;
     public Action OnHeightIncrease;
-
-    [Header("MonthlyCheck")]
+    
+    [Header("Dailycheck")]
     public TWEENTYPE _towerTweenType = TWEENTYPE.LINEAR;
     public Action _OnGameOver;
     [SerializeField] int _startTowerHeightCheck, _endTowerHeightCheck;
@@ -42,8 +42,12 @@ public class TowerManager : MonoBehaviour
     public int[] _towerHeightCheck;
     bool _receiveWarning;
 
+    public Action OnReceivingWarning;
+
     public Action _onTowerTakingDamage;
 
+    //cheatcode
+    public Action OnAddPureEssence;
 
     void Awake()
     {
@@ -61,6 +65,10 @@ public class TowerManager : MonoBehaviour
         OnHeightIncrease += CreateNewFloor;
         _onTowerTakingDamage += TowerTakeDamage;
 
+        OnAddPureEssence += AddPureEssence;
+
+        OnReceivingWarning += WarningGiven;
+
         PopulateTowerHeightCheck();
     }
 #if UNITY_EDITOR
@@ -76,6 +84,10 @@ public class TowerManager : MonoBehaviour
         OnEssenceCollect -= IncreaseBrickCount;
         OnHeightIncrease -= CreateNewFloor;
         _onTowerTakingDamage -= TowerTakeDamage;
+
+        OnAddPureEssence -= AddPureEssence;
+
+        OnReceivingWarning -= WarningGiven;
 
     }
 
@@ -136,7 +148,11 @@ public class TowerManager : MonoBehaviour
         int increase = Mathf.Max(1, Mathf.RoundToInt(_essenceIncreaseBase * eased));
 
         _essenceToPureEssenceConversionRate += increase;
-
+    }
+    void WarningGiven()
+    {
+        _receiveWarning = true;
+        AudioManager.Instance.PlayOneShot(FmodEvent.Instance.sfx_onFirstWarning,transform.position);
     }
 
     void CreateNewFloor()
@@ -152,7 +168,9 @@ public class TowerManager : MonoBehaviour
         else
         {
             if (!_receiveWarning)
-                _receiveWarning = true;
+            {
+                OnReceivingWarning?.Invoke();
+            }
             else
             {
                 _OnGameOver?.Invoke();
@@ -210,6 +228,6 @@ public class TowerManager : MonoBehaviour
     public int GetCurrentBrickCount() => _currentBrickCount;
     public int GetBrickFloorConversionRate() => _brickToFloorConversionRate;
     public int GetEssencePureEssenceConversionRate() => _essenceToPureEssenceConversionRate;
-
+    public void AddPureEssence() => _currentPureEssence++;
 
 }

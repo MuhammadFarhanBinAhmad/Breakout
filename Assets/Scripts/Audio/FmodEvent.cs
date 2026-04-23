@@ -44,6 +44,10 @@ public class FmodEvent : MonoBehaviour
     [field: SerializeField] public EventReference sfx_onARank { get; private set; }
     [field: SerializeField] public EventReference sfx_onSRank { get; private set; }
 
+    [field: Header("Time")]
+    [field: SerializeField] public EventReference sfx_onDayEnd { get; private set; }
+    [field: SerializeField] public EventReference sfx_onFirstWarning { get; private set; }
+
 
 
     [field: Header("UI")]

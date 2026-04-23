@@ -170,14 +170,12 @@ public class BrickGenerator : MonoBehaviour
         {
             test += c;
         }
-        print(test);
 
         foreach (char c in formation.formation)
         {
             if (c == '0')
             {
                 x++;
-                print("hit0");
                 continue;
             }
             if (c == '1')
@@ -187,7 +185,6 @@ public class BrickGenerator : MonoBehaviour
                     break;
                 }
                 x++;
-                print("hit1");
                 GameObject brick = _brickPool.GetBrick();
                 _brickPool.PlaceActiveBrickInList(brick);
                 BrickBar bb = brick.GetComponent<BrickBar>();
@@ -204,7 +201,6 @@ public class BrickGenerator : MonoBehaviour
 
             if (c == '\n')
             {
-                print("hit3");
                 y++;
                 x = 0;
                 yield return new WaitForSeconds(_timerBeforeNextLineSpawn);

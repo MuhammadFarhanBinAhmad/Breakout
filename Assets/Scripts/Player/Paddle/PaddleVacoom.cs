@@ -13,7 +13,6 @@ public class PaddleVacoom : MonoBehaviour
     [Tooltip("Max force per FixedUpdate applied to balls by the vacuum.")]
     public float ballAttractForceCap = 5f;       // cap specifically for Ball
     public LayerMask collectibleLayer;           // set to the layer used by essences/balls
-    public int pullmouseButton = 0;              // 0 = left mouse
 
     bool _isPaddleDisable;
 
@@ -38,7 +37,7 @@ public class PaddleVacoom : MonoBehaviour
         if (_isPaddleDisable)
             return;
 
-        bool attracting = Input.GetMouseButton(pullmouseButton);
+        bool attracting = Input.GetKey(KeyCode.Space);
         _paddleMovement.SetCursorState(attracting);
 
         if (attracting)

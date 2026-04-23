@@ -1,6 +1,5 @@
 using System;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -8,7 +7,9 @@ using UnityEngine.UI;
 public class BallAbilityButtonUI : BaseButtonInteraction
 {
     AbilityManager _abilityManager;
-    AbilityStoreUI _abilityStoreUI;
+    AbilityStoreLayoutUI _abilityStoreUI;
+    TowerUIManager _towerUIManager;
+
 
     private SOStoreAbilityContent _abilityData;
     private StoreAbilityManager _storeAbilityManager;
@@ -28,13 +29,17 @@ public class BallAbilityButtonUI : BaseButtonInteraction
     private void Start()
     {
         _abilityManager = FindAnyObjectByType<AbilityManager>();
-        _abilityStoreUI = FindAnyObjectByType<AbilityStoreUI>();
+        _abilityStoreUI = FindAnyObjectByType<AbilityStoreLayoutUI>();
+        _towerUIManager = FindAnyObjectByType<TowerUIManager>();
 
         OnAbilityPurchase += _abilityStoreUI.RefreshAll;
+        OnAbilityPurchase += _towerUIManager.UpdateEssenceUI;
     }
     private void OnDestroy()
     {
         OnAbilityPurchase -= _abilityStoreUI.RefreshAll;
+        OnAbilityPurchase -= _towerUIManager.UpdateEssenceUI;
+
     }
     public void Setup(SOStoreAbilityContent ability, StoreAbilityManager manager)
     {
@@ -50,9 +55,14 @@ public class BallAbilityButtonUI : BaseButtonInteraction
         _purchaseButton.onClick.AddListener(OnPurchaseClicked);
         _purchaseButton.onClick.AddListener(base.OnButtonClick);
 
+
         Refresh();
     }
-
+    
+    private void OnEnable()
+    {
+        Refresh();
+    }
     public void Refresh()
     {
         if (_abilityPurchased)
@@ -62,8 +72,6 @@ public class BallAbilityButtonUI : BaseButtonInteraction
         bool AvailableToPurchase = _storeAbilityManager.IsAvailableToPurchase(_abilityData.abilityID);
         bool canBuy = _storeAbilityManager.CanPurchase(_abilityData.abilityID);
 
-        print(_abilityData.ability_Name);
-        print("AvailableToPurchase: " + AvailableToPurchase);
 
         _purchaseButton.interactable = canBuy;
         _lockedOverlay.SetActive(!canBuy && !unlocked);

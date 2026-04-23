@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1538f18f7b279be41b62407f55044702, type: 3}
+  m_Name: SO_StoreAbilityUIContent_MiniBomb
+  m_EditorClassIdentifier: Assembly-CSharp::SOStoreAbilityContent
+  abilityID: Level3_0
+  ability_Name: MiniBomba
+  ability_Description: Mini bomb spawn other mini bombs base on base damage but with
+    fall off damage. Will keep spawning mini bomb till current damage is 0
+  ability_Level: 3
+  ability_ToSpawn: {fileID: 11400000, guid: 5de7c52bc536d6447bb57908f2d36056, type: 2}
+  icon: {fileID: -6522164157311176969, guid: 85f57c6658d92cf44aaa2b00761f94e5, type: 3}
+  _availableToPurchaseAtStart: 0
+  requiredAbilityIDs:
+  - Level2_0

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Ability/Store Ability Content")]
+[CreateAssetMenu(menuName = "AbilityUI/Store Ability Content")]
 public class SOStoreAbilityContent : ScriptableObject
 {
     public string abilityID;

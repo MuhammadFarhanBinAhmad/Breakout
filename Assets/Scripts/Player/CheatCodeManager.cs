@@ -22,6 +22,6 @@ public class CheatCodeManager : MonoBehaviour
 
     public void AddBrick() => _towerManager.IncreaseBrickCount();
     public void AddEssence() => _towerManager.IncreaseEssenceCount(5);
-    public void AddPureEssence() => _towerManager._currentPureEssence++;
+    public void AddPureEssence() => _towerManager.AddPureEssence();
 
 }

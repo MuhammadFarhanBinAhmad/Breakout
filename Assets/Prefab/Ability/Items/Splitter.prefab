@@ -48,5 +48,5 @@ MonoBehaviour:
   _SOAbilityEffect: {fileID: 11400000, guid: c2ff2639035d8df4c9cb8d43e09207da, type: 2}
   _SOStatusEffect: {fileID: 0}
   baseChance: 10
-  chanceIncrease: 5
+  chanceIncrease: 1
   maxChance: 100

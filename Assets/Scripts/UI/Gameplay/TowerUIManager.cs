@@ -14,6 +14,9 @@ public class TowerUIManager : MonoBehaviour
 
     [Header("EssenceUI")]
     [SerializeField] TextMeshProUGUI _currentPureEssenceText;
+    [Header("WarningScreen")]
+    [SerializeField] GameObject _warningPopUp;
+    [SerializeField] GameObject _warningStamp;
     [Header("GameOverScreen")]
     public GameObject _gameOverScreen;
 
@@ -26,7 +29,10 @@ public class TowerUIManager : MonoBehaviour
     {
         _towerManager.OnEssenceCollect += UpdateTowerUI;
         _towerManager.OnEssenceCollect += UpdateEssenceUI;
+        _towerManager.OnAddPureEssence += UpdateTowerUI;
         _towerManager._OnGameOver += GameOverScreen;
+        _towerManager.OnReceivingWarning += ShowWarningStamp;
+        _towerManager.OnReceivingWarning += ShowWarningPopUp;
         UpdateTowerUI();
         UpdateEssenceUI();
     }
@@ -35,6 +41,9 @@ public class TowerUIManager : MonoBehaviour
         _towerManager.OnEssenceCollect -= UpdateTowerUI;
         _towerManager.OnEssenceCollect -= UpdateEssenceUI;
         _towerManager._OnGameOver -= GameOverScreen;
+        _towerManager.OnAddPureEssence -= UpdateTowerUI;
+        _towerManager.OnReceivingWarning -= ShowWarningStamp;
+        _towerManager.OnReceivingWarning -= ShowWarningPopUp;
     }
     public void GameOverScreen() => _gameOverScreen.SetActive(true);
     public void UpdateTowerUI()
@@ -43,6 +52,12 @@ public class TowerUIManager : MonoBehaviour
         _currentTowerHeightText.text = "Height: " + _towerManager._currentTowerHeight.ToString() + " M";
 
     }
+    public void ShowWarningPopUp()
+    {
+        _warningPopUp.SetActive(true);
+        TimeManager.StopTime();
+    }
+    public void ShowWarningStamp() => _warningStamp.SetActive(true);
     public void UpdateEssenceUI()
     {
         _brickFillImage.fillAmount = (float)_towerManager.GetCurrentEssence() / (float)_towerManager.GetEssencePureEssenceConversionRate();

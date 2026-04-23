@@ -110,7 +110,6 @@ public class AbilityManager : MonoBehaviour
     {
         if (_abilitiesByID.TryGetValue(id, out ABSAbility ability))
         {
-            print(id + " is unlocked");
             ability.SetUnlocked(true);
         }
     }

@@ -3,6 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+public enum ITEMRARITY
+{
+    COMMON,
+    RARE,
+    LEGENDARY,
+    ODDITIES
+}
+
 [System.Serializable]
 public class ShopLevelState
 {
@@ -23,13 +31,20 @@ public class StoreAbilityManager : MonoBehaviour
 {
     private TowerManager _towerManager;
 
-    [Header("Ability Database")]
+    [Header("Ball Ability Database")]
     [SerializeField] private List<SOStoreAbilityContent> allAbilities = new List<SOStoreAbilityContent>();
 
-    [SerializeField] private ShopLevelState[] _abilityLevelState = new ShopLevelState[4];
+    [SerializeField] private ShopLevelState[] _abilityLevelAndCostState = new ShopLevelState[4];
 
     public List<string> unlockedAbilities = new List<string>();
     private Dictionary<string, SOStoreAbilityContent> abilityLookup;
+
+    [Header("Item Ability Database")]
+    //2 list
+    [SerializeField] List<SOItemAbilityContentUI> _itemAvailableList = new List<SOItemAbilityContentUI>();
+    [SerializeField] List<SOItemAbilityContentUI> _itemPurchaseList = new List<SOItemAbilityContentUI>();
+    [SerializeField] List<ItemAbilityButtonUI> _itemButtonsList = new List<ItemAbilityButtonUI>();
+    [SerializeField] int[] _itemCostByLevel = new int[4];
 
     [Header("Store Open")]
     public Action OnStoreOpen, OnStoreClose;
@@ -40,21 +55,25 @@ public class StoreAbilityManager : MonoBehaviour
     {
         _towerManager = FindAnyObjectByType<TowerManager>();
 
-        for (int i = 0; i < _abilityLevelState.Length; i++)
+    }
+    private void Start()
+    {
+        for (int i = 0; i < _abilityLevelAndCostState.Length; i++)
         {
-            if (_abilityLevelState[i] == null)
+            if (_abilityLevelAndCostState[i] == null)
             {
-                _abilityLevelState[i] = new ShopLevelState();
+                _abilityLevelAndCostState[i] = new ShopLevelState();
             }
 
-            _abilityLevelState[i]._level = i;
+            _abilityLevelAndCostState[i]._level = i;
         }
 
         abilityLookup = allAbilities
             .Where(a => a != null && !string.IsNullOrEmpty(a.abilityID))
             .ToDictionary(a => a.abilityID, a => a);
-    }
 
+        SetItemAvailableToPurchase();
+    }
     public bool CanPurchase(string abilityID)
     {
         if (!abilityLookup.ContainsKey(abilityID))
@@ -66,10 +85,10 @@ public class StoreAbilityManager : MonoBehaviour
         SOStoreAbilityContent ability = abilityLookup[abilityID];
         int abilityLevel = ability.ability_Level;
 
-        if (abilityLevel < 0 || abilityLevel >= _abilityLevelState.Length)
+        if (abilityLevel < 0 || abilityLevel >= _abilityLevelAndCostState.Length)
             return false;
 
-        int price = _abilityLevelState[abilityLevel].GetPrice();
+        int price = _abilityLevelAndCostState[abilityLevel].GetPrice();
 
         if (_towerManager.GetTotalPureEssenceCount() < price)
             return false;
@@ -94,12 +113,12 @@ public class StoreAbilityManager : MonoBehaviour
         SOStoreAbilityContent ability = abilityLookup[abilityID];
         int abilityLevel = ability.ability_Level;
 
-        int price = _abilityLevelState[abilityLevel].GetPrice();
+        int price = _abilityLevelAndCostState[abilityLevel].GetPrice();
 
         _towerManager.DeductPureEssence(price);
         unlockedAbilities.Add(abilityID);
 
-        _abilityLevelState[abilityLevel].RegisterPurchase();
+        _abilityLevelAndCostState[abilityLevel].RegisterPurchase();
 
         print($"Purchased ability: {ability.ability_Name}");
 
@@ -149,9 +168,55 @@ public class StoreAbilityManager : MonoBehaviour
 
     public int GetAbilityCost(int level)
     {
-        if (level < 0 || level >= _abilityLevelState.Length || _abilityLevelState[level] == null)
+        if (level < 0 || level >= _abilityLevelAndCostState.Length || _abilityLevelAndCostState[level] == null)
             return 0;
 
-        return _abilityLevelState[level].GetPrice();
+        return _abilityLevelAndCostState[level].GetPrice();
+    }
+
+    public void SetItemAvailableToPurchase()
+    {
+        // Safety check
+        if (_itemAvailableList.Count == 0 || _itemButtonsList.Count == 0)
+            return;
+
+        // Create a shuffled copy of available items
+        List<SOItemAbilityContentUI> shuffled = new List<SOItemAbilityContentUI>(_itemAvailableList);
+
+        for (int i = 0; i < shuffled.Count; i++)
+        {
+            int rand = UnityEngine.Random.Range(i, shuffled.Count);
+            (shuffled[i], shuffled[rand]) = (shuffled[rand], shuffled[i]);
+        }
+
+        // Assign to buttons
+        for (int i = 0; i < _itemButtonsList.Count; i++)
+        {
+            if (i >= shuffled.Count)
+                break;
+
+            _itemButtonsList[i].SetItemAbilityContent(shuffled[i]);
+        }
+    }
+    public int GetItemCost(ITEMRARITY rarity)
+    {
+        print(rarity.ToString());
+        int cost = 0;
+        switch (rarity)
+        {
+            case ITEMRARITY.COMMON:
+                cost = _itemCostByLevel[0];
+                break;
+            case ITEMRARITY.RARE:
+                cost = _itemCostByLevel[1];
+                break;
+            case ITEMRARITY.LEGENDARY:
+                cost = _itemCostByLevel[2];
+                break;
+            case ITEMRARITY.ODDITIES:
+                cost = _itemCostByLevel[3];
+                break;
+        }
+        return cost;
     }
 }
