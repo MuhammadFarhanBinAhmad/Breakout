@@ -16,4 +16,4 @@ MonoBehaviour:
   ability_Description: For every 10 combo, +1 base damage
   _itemRarity: 1
   ability_ToSpawn: {fileID: 11400000, guid: 7252181b9059bba4e9a14ad0f3b6c515, type: 2}
-  icon: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  icon: {fileID: 21300000, guid: 6c5e3a129d2c0bf48bbdddd0fcfd892f, type: 3}

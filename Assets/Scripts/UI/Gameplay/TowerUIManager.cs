@@ -61,6 +61,6 @@ public class TowerUIManager : MonoBehaviour
     public void UpdateEssenceUI()
     {
         _brickFillImage.fillAmount = (float)_towerManager.GetCurrentEssence() / (float)_towerManager.GetEssencePureEssenceConversionRate();
-        _currentPureEssenceText.text = "PE: " + _towerManager._currentPureEssence.ToString();
+        _currentPureEssenceText.text = ": " + _towerManager._currentPureEssence.ToString();
     }
 }

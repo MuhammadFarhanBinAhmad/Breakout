@@ -16,4 +16,4 @@ MonoBehaviour:
   ability_Description: +1 base damage
   _itemRarity: 1
   ability_ToSpawn: {fileID: 11400000, guid: 328a5cd637a352b4cb2e031348c0f2c8, type: 2}
-  icon: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  icon: {fileID: -844393136425847589, guid: 065fff110cb682d4e87b3496cfb2380b, type: 3}

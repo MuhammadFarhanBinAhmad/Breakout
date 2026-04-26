@@ -16,7 +16,7 @@ public class BallAbilityButtonUI : BaseButtonInteraction
 
     [Header("UI Detail")]
     [SerializeField] private Image _icon;
-    [SerializeField] private TMP_Text _nameText,_titleText;
+    [SerializeField] private TMP_Text _titleText;
     [SerializeField] private TMP_Text _descriptionText;
     [SerializeField] private TMP_Text _costText;
     [SerializeField] private Button _purchaseButton;
@@ -46,7 +46,6 @@ public class BallAbilityButtonUI : BaseButtonInteraction
         _abilityData = ability;
         _storeAbilityManager = manager;
         _icon.sprite = _abilityData.icon;
-        _nameText.text = _abilityData.ability_Name;
         _titleText.text = _abilityData.ability_Name;
         _descriptionText.text = _abilityData.ability_Description;
         _costText.text = _storeAbilityManager.GetAbilityCost(ability.ability_Level).ToString();
