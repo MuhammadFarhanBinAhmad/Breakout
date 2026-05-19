@@ -46,7 +46,7 @@ public class ClusterBomb : MonoBehaviour
     public void InvokeOnExplode() => _OnExplode?.Invoke();
     void Explode()
     {
-        GameObject exp = _explosionPool.GetSmallExplosion();
+        GameObject exp = _explosionPool.GetExplosion();
         exp.transform.position = transform.position;
         ExplosionDamage ed = exp.GetComponent<ExplosionDamage>();
         //Set context of explosion to pass to explosion object
@@ -54,19 +54,19 @@ public class ClusterBomb : MonoBehaviour
         {
             ExplosionContext ctx = new ExplosionContext
             {
-                _damage = _explosionDamage,
                 _source = null,
                 _position = transform.position,
             };
-            ed.Initialize(ctx);
+            ctx._Stats[STATID.BASE_DAMAGE] = _explosionDamage;
+            ed.Initialize(ctx, true);
         }
 
-        GlobalGameplayEventManager.OnClusterBombExplode?.Invoke(new ExplosionContext
-        {
-            _position = transform.position,
-            _damage = _explosionDamage,
-            _source = null,
-        });
+        //GlobalGameplayEventManager.OnClusterBombExplode?.Invoke(new ExplosionContext
+        //{
+        //    _position = transform.position,
+        //    _damage = _explosionDamage,
+        //    _source = null,
+        //});
         print("hit");
         this.gameObject.SetActive(false);
 

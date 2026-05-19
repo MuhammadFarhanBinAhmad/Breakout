@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: Pink
   m_EditorClassIdentifier: Assembly-CSharp::SO_BrickHealthStats
   e_Parent: 4
-  e_Child: 5
+  e_Child: 0
   _health: 32
   _dropSpeed: 1
   _APValue: 5
-  _daytoUnlock: 7
-  _color: {r: 1, g: 0.07843138, b: 0.5764706, a: 1}
+  _daytoUnlock: 5
+  _layerNumber: 4
+  _color: {r: 1, g: 0.6745283, b: 0.8504214, a: 1}

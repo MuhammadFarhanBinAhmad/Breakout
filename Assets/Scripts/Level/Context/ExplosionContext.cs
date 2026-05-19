@@ -1,10 +1,7 @@
 using UnityEngine;
+using UnityEngine.TextCore;
 
-public class ExplosionContext
+public class ExplosionContext : AbilityContext
 {
-    public int _damage;
-    public GameObject _source;
-    public Vector2 _position;
-    public float _scaleMultiplier;
-    public SOStatusEffect _statusEffect;
+    
 }

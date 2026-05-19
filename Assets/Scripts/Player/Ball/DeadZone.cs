@@ -11,21 +11,18 @@ public class DeadZone : MonoBehaviour
     public GameObject _deathVFX;
 
     [Header("Shield")]
+    [SerializeField] SpriteRenderer _spriteRenderer;
     [SerializeField] float _maxShieldMana;
     [SerializeField] float _currentShieldMana;
     [SerializeField] float _coolDownPeriod;
     [SerializeField] float _currentCoolDownTime;
     [SerializeField] float _shieldRegenRate;
 
-    [Header("ShieldFeedback")]
-    [SerializeField] Light2D _shieldLight;
-    [SerializeField] float _shieldBrightnessMaxIntensity;
-    [SerializeField] float _shieldBrightnessCurrentIntensity;
-
-
+    Color shieldColour;
     private void Start()
     {
         _towerManager = FindAnyObjectByType<TowerManager>();
+        shieldColour = _spriteRenderer.color;
         _currentShieldMana = _maxShieldMana;
 
         UpdateShieldVisual();
@@ -58,14 +55,13 @@ public class DeadZone : MonoBehaviour
     }
     void UpdateShieldVisual()
     {
-        if (_shieldLight == null) return;
+        if (_spriteRenderer == null) return;
 
         float normalized = _currentShieldMana / _maxShieldMana;
         normalized = Mathf.Pow(normalized, 1.5f); // tweak this
+        shieldColour.a = normalized;
+        _spriteRenderer.color = shieldColour;
 
-        _shieldBrightnessCurrentIntensity = normalized * _shieldBrightnessMaxIntensity;
-
-        _shieldLight.intensity = _shieldBrightnessCurrentIntensity;
     }
     private void OnTriggerEnter2D(Collider2D other)
     {
@@ -73,7 +69,8 @@ public class DeadZone : MonoBehaviour
         {
             Ball ball = other.GetComponent<Ball>();
             _deathVFX.SetActive(true);
-            if(!ball._copyBall)
+            GlobalFeedbackManager.Instance.PlayGlobalFeedback?.Invoke();
+            if (!ball._copyBall)
             {
                 ball.OnBallReset?.Invoke();
             }

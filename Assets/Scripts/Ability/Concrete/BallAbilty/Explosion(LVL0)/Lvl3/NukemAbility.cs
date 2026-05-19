@@ -13,7 +13,7 @@ public class NukemAbility : ABSAbility, IFireContextModifier
     public void ModifyFireContext(HitContext hitCtx, ref HotZoneArea hza)
     {
         print("Add Nukem");
-        hza.SetStats(_SOAbilityEffect._statusDamage, _SOAbilityEffect._effectDuration, _SOAbilityEffect._scaleSizeMultiplier);
+        hza.SetStats(_SOAbilityEffect._damagePerStack, _SOAbilityEffect._stackLifeTime, _SOAbilityEffect._scaleSizeMultiplier);
 
     }
 }

@@ -27,7 +27,7 @@ public class MiniBombAbility : ABSAbility
     //spawn first wave of mini bomb
     void OnExplosion(ExplosionContext e)
     {
-        SpawnMiniBomb(e._position, e._damage);
+        SpawnMiniBomb(e._position, (int)e._Stats[STATID.BASE_DAMAGE]);
     }
 
     public void SpawnMiniBomb(Vector2 pos, int damage)

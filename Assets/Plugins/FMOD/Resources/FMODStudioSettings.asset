@@ -480,9 +480,11 @@ MonoBehaviour:
   - Master
   Banks:
   - Ability
+  - Ball
   - Bricks
   - Essence
   - Paddle
+  - Time
   - UI
   BanksToLoad: []
   LiveUpdatePort: 9264

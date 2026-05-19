@@ -122,7 +122,7 @@ public class AbilityManager : MonoBehaviour
         HitContext ctx = new HitContext
         {
             _brick = brick,
-            _baseDamage = basedmg,
+            _damageValue = basedmg,
             _isCrit = false,
         };
 
@@ -135,7 +135,7 @@ public class AbilityManager : MonoBehaviour
             ability.OnHit(ctx);
 
         // Phase 3: Apply damage
-        brick.OnDamage(ctx._baseDamage);
+        brick.OnDamage(ctx._damageValue);
 
         // Phase 4: Notify abilities of outcome
         foreach (var ability in _brickAbilities)
@@ -182,14 +182,43 @@ public class AbilityManager : MonoBehaviour
 
         return null;
     }
-
-    public void ApplyExplosionModifiers(HitContext hitCtx, ref ExplosionContext explosionCtx)
+    public void ApplyDischargeModifiers(HitContext hitCtx, AbilityContext dischargeCtx)
+    {
+        foreach (var ability in _brickAbilities)
+        {
+            if (ability is IDischargeContextModifier modifier)
+            {
+                modifier.ModifyDischargeContext(hitCtx, dischargeCtx);
+            }
+        }
+    }
+    public void ApplyExplosionModifiers(HitContext hitCtx,ExplosionContext explosionCtx)
     {
         foreach (var ability in _brickAbilities)
         {
             if (ability is IExplosionContextModifier modifier)
             {
-                modifier.ModifyExplosionContext(hitCtx, ref explosionCtx);
+                modifier.ModifyExplosionContext(hitCtx, explosionCtx);
+            }
+        }
+    }
+    public void ApplyToxicModifiers(AbilityContext dischargeCtx)
+    {
+        foreach (var ability in _brickAbilities)
+        {
+            if (ability is IToxicContextModifier modifier)
+            {
+                modifier.ModifyToxicContext(dischargeCtx);
+            }
+        }
+    }
+    public void ApplyCriticalModifiers(HitContext hitCtx, AbilityContext CriticalCtx)
+    {
+        foreach (var ability in _brickAbilities)
+        {
+            if (ability is ICriticalContextModifier modifier)
+            {
+                modifier.ModifyCriticalContext(hitCtx, CriticalCtx);
             }
         }
     }

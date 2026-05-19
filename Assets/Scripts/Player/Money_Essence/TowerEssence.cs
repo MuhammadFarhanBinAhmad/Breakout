@@ -23,7 +23,9 @@ public class TowerEssence : MonoBehaviour
     float intensityTimer = 0f;
     bool intensityDone = false;
     [SerializeField] float intensityDuration = 3f;
-
+    [Header("ParticleEffects")]
+    [SerializeField] ParticleSystem _particleEffects;
+        
     [Header("Physics / Movement")]
     public float maxSpeed;
     Rigidbody2D rb;
@@ -40,10 +42,10 @@ public class TowerEssence : MonoBehaviour
 
     [Header("Suction Tuning")]
     [Tooltip("Reduced drag while being sucked (so suction is smooth).")]
-    public float suctionDrag = 0.1f;
+    public float suctionDrag;
     [Tooltip("How strongly we add an impulse in the last pull direction when suction stops.")]
     [Range(0f, 2f)]
-    public float suctionReleaseImpulseMultiplier = 1.0f;
+    public float suctionReleaseImpulseMultiplier;
 
     // internal
     bool isAttracted = false;
@@ -101,6 +103,10 @@ public class TowerEssence : MonoBehaviour
             if (_essenceCurrentLiveTime > _essenceExpirationTime[_currentExpirationPhase] && _currentExpirationPhase < _essenceExpirationTime.Length - 1)
             {
                 _currentExpirationPhase++;
+                if(_currentExpirationPhase == 1)
+                {
+                    _particleEffects.Stop();
+                }
             }
         }
         float distance = Vector2.Distance(transform.position, _paddleVacoom.transform.position);
@@ -175,10 +181,18 @@ public class TowerEssence : MonoBehaviour
             case 2:
                 _towerManager.IncreaseEssenceCount(GetHalfEssence());
                 break;
-        }
-        rb.linearVelocity = Vector3.zero;
-        StopAttraction();
 
+        }
+        ResetStats();
+
+    }
+    void ResetStats()
+    {
+        rb.linearVelocity = Vector3.zero;
+        _currentExpirationPhase = 0;
+        _essenceCurrentLiveTime = 0;
+        _particleEffects.Play();
+        StopAttraction();
         gameObject.SetActive(false);
     }
 

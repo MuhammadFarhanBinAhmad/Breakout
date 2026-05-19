@@ -14,8 +14,8 @@ public class GlobalFeedbackManager : MonoBehaviour
 
     Transform _ballTransform;
     Transform _paddleTransform;
-    [SerializeField]Transform[] _wallTransforms;
     BrickPool _brickPool;
+    [SerializeField]Transform[] _wallTransforms;
     [SerializeField] Transform[] _brickTransforms;
 
     [Header("OnHitBallAnimation")]
@@ -34,7 +34,11 @@ public class GlobalFeedbackManager : MonoBehaviour
     public float _brickDestroyBallTargetScale;
     public float _brickDestroyBrickTargetScale;
 
-
+    [Header("StartScale")]
+    [SerializeField] float _paddleStartScaleMultiplier;
+    [SerializeField] float _ballStartScaleMultiplier;
+    [SerializeField] float _wallStartScaleMultipler;
+    [SerializeField] float _brickStartScaleMultipler;
     float _paddleScaleMultiplier, _ballScaleMultiplier, _wallScaleMultipler, _brickScaleMultipler;
     Coroutine _shakeWorldRoutine;
 
@@ -43,8 +47,6 @@ public class GlobalFeedbackManager : MonoBehaviour
     Vector3 paddleOriginalScale = new Vector3(1,1,1);
     Vector3[] wallOriginalScales = Array.Empty<Vector3>();
     Vector3[] brickOriginalScales = Array.Empty<Vector3>();
-
-
 
     public static GlobalFeedbackManager Instance { get; private set; }
     private void Awake()
@@ -69,11 +71,11 @@ public class GlobalFeedbackManager : MonoBehaviour
             if (b != null) _ballTransform = b.transform;
         }
 
-        //if (_wallTransforms == null || _wallTransforms.Length == 0)
-        //{
-        //    var walls = GameObject.FindGameObjectsWithTag("Wall");
-        //    _wallTransforms = walls.Select(w => w.transform).ToArray();
-        //}
+        if (_wallTransforms == null || _wallTransforms.Length == 0)
+        {
+            var walls = GameObject.FindGameObjectsWithTag("Wall");
+            _wallTransforms = walls.Select(w => w.transform).ToArray();
+        }
         List<GameObject> bricks = _brickPool.GetListOfBrick();
         _brickTransforms = new Transform[bricks.Count];
 
@@ -140,10 +142,10 @@ public class GlobalFeedbackManager : MonoBehaviour
 
         // precompute targets
         Vector3 paddleTarget = paddleOriginalScale * _paddleScaleMultiplier;
-        Vector3 paddleStart = paddleOriginalScale * _startingscaleMultiplier;
+        Vector3 paddleStart = paddleOriginalScale * _paddleStartScaleMultiplier;
 
         Vector3 ballTarget = ballOriginalScale * _ballScaleMultiplier;
-        Vector3 ballStart = ballOriginalScale * _startingscaleMultiplier;
+        Vector3 ballStart = ballOriginalScale * _ballStartScaleMultiplier;
 
         Vector3[] wallTargets = new Vector3[wallOriginalScales.Length];
         Vector3[] wallStarts = new Vector3[wallOriginalScales.Length];
@@ -151,7 +153,7 @@ public class GlobalFeedbackManager : MonoBehaviour
         for (int i = 0; i < wallOriginalScales.Length; i++)
         {
             wallTargets[i] = wallOriginalScales[i] * _wallScaleMultipler;
-            wallStarts[i] = wallOriginalScales[i] * _startingscaleMultiplier;
+            wallStarts[i] = wallOriginalScales[i] * _wallStartScaleMultipler;
         }
 
         Vector3[] brickTargets = new Vector3[brickOriginalScales.Length];
@@ -159,7 +161,7 @@ public class GlobalFeedbackManager : MonoBehaviour
         for (int i = 0; i < brickOriginalScales.Length; i++)
         {
             brickTargets[i] = brickOriginalScales[i] * _brickScaleMultipler;
-            brickStarts[i] = brickOriginalScales[i] * _startingscaleMultiplier;
+            brickStarts[i] = brickOriginalScales[i] * _brickStartScaleMultipler;
         }
 
         while (time < animationDuration)
@@ -206,6 +208,10 @@ public class GlobalFeedbackManager : MonoBehaviour
         for (int i = 0; i < _wallTransforms.Length; i++)
             if (_wallTransforms[i] != null)
                 _wallTransforms[i].localScale = wallOriginalScales[i];
+
+        for(int i =0;i < _brickTransforms.Length;i++)
+            if (_brickTransforms[i] != null)
+                _brickTransforms[i].localScale = brickOriginalScales[i];
 
         _shakeWorldRoutine = null;
     }

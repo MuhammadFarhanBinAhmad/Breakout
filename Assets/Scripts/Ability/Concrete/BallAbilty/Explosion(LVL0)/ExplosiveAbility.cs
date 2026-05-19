@@ -17,22 +17,20 @@ public class ExplosiveAbility : ABSAbility
 
         GameObject explosionGO = _explosionPool.GetExplosion();
         explosionGO.transform.position = transform.position;
-
         var ed = explosionGO.GetComponent<ExplosionDamage>();
         if (ed == null) return;
 
         ExplosionContext ectx = new ExplosionContext
         {
-            _damage = ctx._baseDamage,
             _source = gameObject,
             _position = ctx._brick.transform.position,
-            _scaleMultiplier = 1f,
             _statusEffect = null
         };
+        ectx._Stats[STATID.BASE_DAMAGE] = _SOAbilityEffect._baseDamageValue;
+        ectx._Stats[STATID.SCALE_MULTIPLIER] = _SOAbilityEffect._scaleSizeMultiplier;
 
         // Let other abilities modify the explosion data
-        _abilityManager.ApplyExplosionModifiers(ctx, ref ectx);
-
-        ed.Initialize(ectx);
+        _abilityManager.ApplyExplosionModifiers(ctx, ectx);
+        ed.Initialize(ectx,true);
     }
 }

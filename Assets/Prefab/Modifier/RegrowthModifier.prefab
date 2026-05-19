@@ -44,5 +44,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b934ac3f9a395c44be2fd2db86b3c7f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RegrowthModifier
-  _healInterval: 1
+  _healInterval: 3
   _healAmount: 1

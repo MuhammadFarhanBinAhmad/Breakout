@@ -27,6 +27,9 @@ public class FmodEvent : MonoBehaviour
     [field: SerializeField] public EventReference sfx_onBallDestroy { get; private set; }
     [field: SerializeField] public EventReference sfx_onBallRespawn { get; private set; }
     [field: SerializeField] public EventReference sfx_onBallHitWall { get; private set; }
+    [field: SerializeField] public EventReference sfx_onBallShoot { get; private set; }
+    [field: SerializeField] public EventReference sfx_onBallSlowmo { get; private set; }
+
 
     [field: Header("Explosion")]
     [field: SerializeField] public EventReference sfx_onBombExplosion { get; private set; }
@@ -34,8 +37,6 @@ public class FmodEvent : MonoBehaviour
 
     [field: Header("Time")]
     [field: SerializeField] public EventReference sfx_onNewDay { get; private set; }
-    [field: SerializeField] public EventReference sfx_onNewWeek { get; private set; }
-    [field: SerializeField] public EventReference sfx_onNewMonth { get; private set; }
 
     [field: Header("Combo")]
     [field: SerializeField] public EventReference sfx_onDRank{ get; private set; }

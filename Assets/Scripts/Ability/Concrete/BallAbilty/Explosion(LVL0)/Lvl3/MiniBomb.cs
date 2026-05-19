@@ -47,7 +47,7 @@ public class MiniBomb : MonoBehaviour
     public void InvokeOnExplode() => _OnExplode?.Invoke();
     void Explode()
     {
-        GameObject exp = _explosionPool.GetSmallExplosion();
+        GameObject exp = _explosionPool.GetExplosion();
         exp.transform.position = transform.position;
         ExplosionDamage ed = exp.GetComponent<ExplosionDamage>();
         //Set context of explosion to pass to explosion object
@@ -55,11 +55,12 @@ public class MiniBomb : MonoBehaviour
         {
             ExplosionContext ctx = new ExplosionContext
             {
-                _damage = _explosionDamage,
                 _source = gameObject,
                 _position = transform.position,
+                _statusType = STATUSTYPE.EXPLOSION
             };
-            ed.Initialize(ctx);
+            ctx._Stats[STATID.BASE_DAMAGE] = _explosionDamage;
+            ed.Initialize(ctx,true);
         }
 
         if(_explosionDamage > 2)

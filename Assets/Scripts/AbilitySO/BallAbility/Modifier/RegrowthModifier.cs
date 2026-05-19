@@ -25,6 +25,7 @@ public class RegrowthModifier : BrickModifierBase
         {
             if (_brick._health < _brick._startingHealth)
             {
+                print("healing");
                 _brick._health += _healAmount;
             }
         }

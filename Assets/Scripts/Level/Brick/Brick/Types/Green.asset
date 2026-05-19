@@ -17,5 +17,6 @@ MonoBehaviour:
   _health: 2
   _dropSpeed: 1
   _APValue: 2
-  _daytoUnlock: 4
+  _daytoUnlock: 2
+  _layerNumber: 1
   _color: {r: 0, g: 1, b: 0, a: 1}

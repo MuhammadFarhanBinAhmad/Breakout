@@ -1,39 +1,58 @@
-using UnityEngine;
 using System;
+using UnityEngine;
 
-public class RNGService : MonoBehaviour
+public static class RNGService
 {
-    private static RNGService _instance;
-    public static RNGService Instance => _instance ??= new RNGService(Environment.TickCount);
+    private static System.Random _rng =
+        new System.Random(Environment.TickCount);
 
-    private System.Random _rng;
-
-    public RNGService(int seed)
+    // PRD state per-stream
+    public class PRDState
     {
-        _rng = new System.Random(seed);
+        public int FailCount = 0;
     }
 
-    public RNGService() : this(Environment.TickCount) { }
+    static PRDState _critState = new PRDState();
 
-    // Simple Bernoulli roll
-    public bool RollBernoulli(float chance)
+    // Simple roll
+    public static bool RollBernoulli(float chance)
     {
         return (float)_rng.NextDouble() < Mathf.Clamp01(chance);
     }
 
-    // PRD state per-stream
-    public class PRDState { public int FailCount = 0; }
-
-    // PRD roll: baseChance + FailCount * bonusPerFail. If roll succeeds FailCount reset to 0, else increment.
-    public bool RollPRD(float baseChance, float bonusPerFail, PRDState state)
+    // PRD roll
+    public static bool RollPRD(
+        float baseChance,
+        float bonusPerFail,
+        PRDState state)
     {
-        float chance = Mathf.Clamp01(baseChance + state.FailCount * bonusPerFail);
-        bool result = (float)_rng.NextDouble() < chance;
-        if (result) state.FailCount = 0;
-        else state.FailCount++;
+        float chance =
+            Mathf.Clamp01(baseChance + state.FailCount * bonusPerFail);
+
+        bool result =
+            (float)_rng.NextDouble() < chance;
+
+        if (result)
+            state.FailCount = 0;
+        else
+            state.FailCount++;
+
         return result;
     }
 
-    // Optional seeded reset
-    public void Reseed(int seed) => _rng = new System.Random(seed);
+    // Crit helper
+    public static bool RollCrit(
+        float chance,
+        float bonusPerFail)
+    {
+        return RollPRD(
+            chance,
+            bonusPerFail,
+            _critState);
+    }
+
+    public static void Reseed(int seed)
+    {
+        _rng = new System.Random(seed);
+    }
 }

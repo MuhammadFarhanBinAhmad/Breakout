@@ -2,8 +2,7 @@ using UnityEngine;
 
 public class ShellShockAbility : ABSAbility, IExplosionContextModifier
 {
-    public void ModifyExplosionContext(HitContext hitCtx, ref ExplosionContext explosionCtx)
+    public void ModifyExplosionContext(HitContext hitCtx, ExplosionContext explosionCtx)
     {
-        explosionCtx._statusEffect = _SOStatusEffect;
     }
 }

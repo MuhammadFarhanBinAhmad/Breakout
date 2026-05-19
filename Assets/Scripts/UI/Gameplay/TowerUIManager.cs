@@ -9,7 +9,7 @@ public class TowerUIManager : MonoBehaviour
 
     [Header("TowerUI")]
     [SerializeField] TextMeshProUGUI _currentTowerHeightText;
-    [SerializeField] Image _brickFillImage, _floorFillImage;
+    [SerializeField] Image _brickFillImage;
 
 
     [Header("EssenceUI")]
@@ -48,7 +48,6 @@ public class TowerUIManager : MonoBehaviour
     public void GameOverScreen() => _gameOverScreen.SetActive(true);
     public void UpdateTowerUI()
     {
-        _floorFillImage.fillAmount = (float)_towerManager.GetCurrentBrickCount() / (float)_towerManager.GetBrickFloorConversionRate();
         _currentTowerHeightText.text = "Height: " + _towerManager._currentTowerHeight.ToString() + " M";
 
     }

@@ -1,17 +1,16 @@
 using System;
 using System.Collections.Generic;
-using TMPro.EditorUtilities;
-using UnityEditor.ShaderGraph.Internal;
+
 using UnityEngine;
-using UnityEngine.Experimental.GlobalIllumination;
-using UnityEngine.Rendering;
-public enum StatusType
+
+[System.Flags]
+public enum STATUSTYPE
 {
-    NULL,
-    POISON,
-    BURN,
-    DISCHARGE,
-    STUN
+    NONE = 0,
+    EXPLOSION = 1 << 0,
+    DISCHARGE = 1 << 1,
+    CRIT = 1 << 2,
+    TOXIC = 1 << 3,
 }
 public enum DeathCause
 {
@@ -22,24 +21,37 @@ public enum DeathCause
 [System.Serializable]
 public class StatusInstance
 {
-    public StatusType type;
+    public ABSAbility _ability;
+
+    public STATUSTYPE type;
 
     public int stacks;
+    public int stackToAdd;
     public int maxStacks;
 
     public int damagePerStack;
 
-    public float effectDuration;
-    public float remainingEffectTime;
+    public float remainingStackTime,stackLifeTime;
+    public float remainingEffectTime, timeBeforeEffect;
+
+    public bool resetStackLifeTimeUponHit;
+    public GameObject spawnPrefab;
+
+    public bool affectsSpeed;
+    public float speedMultiplier;
 }
 public class BrickBar : MonoBehaviour
 {
+    BrickUI _brickUI;
 
-    Dictionary<StatusType, StatusInstance> _statuses = new Dictionary<StatusType, StatusInstance>();
-    List<StatusType> toRemove = new List<StatusType>();
+    Dictionary<STATUSTYPE, StatusInstance> _statuses = new Dictionary<STATUSTYPE, StatusInstance>();
+    List<STATUSTYPE> toRemove = new List<STATUSTYPE>();
 
     public List<BrickModifierBase> _modifiers = new List<BrickModifierBase>();
+    List <GameObject> _abilityEffects = new List<GameObject>();
 
+    public SO_BrickHealthStats []_brickHealthStats = new SO_BrickHealthStats[5];
+    
     BrickPool _brickPool;
     EssencePool _essencePool;
 
@@ -53,18 +65,27 @@ public class BrickBar : MonoBehaviour
     public GameObject _destroyParticleEffect;
 
     [Header("BrickStats")]
-    internal int _startingHealth;
+    public int _startingHealth;
     public int _health;
+    public int _layer;
     public int _shield;
     public float _tickTimer;
-    float _startFallSpeed;
+    public float _baseFallSpeed;
     public float _fallSpeed;
+    bool _speedDirty;
+
+
+    [Header("BrickDamageEffect")]
+    [SerializeField] SOLerpAnimationEffect _onDamageAnimEffect;
+    [SerializeField] SOLerpAnimationEffect _onDeathAnimEffect;
+    [SerializeField] ParticleSystem _damageParticle;
+    AnimationCurveEffect _AnimCurveEffect;
+
 
     [Header("Essence")]
     public int _essenceMinAmountToSpawn;
     public int _essenceMaxAmountToSpawn;
 
-    List<SpriteRenderer> _spritesRenderer = new List<SpriteRenderer>();
 
     bool pendingDeath;
     DeathCause pendingDeathCause;
@@ -79,15 +100,13 @@ public class BrickBar : MonoBehaviour
         abilityManager = FindAnyObjectByType<AbilityManager>();
         _towerManager = FindAnyObjectByType<TowerManager>();
 
-        foreach (Transform child in transform)
-        {
-            var sr = child.GetComponent<SpriteRenderer>();
-            if (sr != null)
-                _spritesRenderer.Add(sr);
-        }
 
         _brickPool = FindAnyObjectByType<BrickPool>();
         _essencePool = FindAnyObjectByType<EssencePool>();
+
+        _brickUI = GetComponent<BrickUI>();
+
+        _AnimCurveEffect = GetComponent<AnimationCurveEffect>();
 
         _onDeath += HandleDeath;
         _onDeath += SpawnEssence;
@@ -105,8 +124,6 @@ public class BrickBar : MonoBehaviour
         _onDeathByTower += _statuses.Clear;
         _onDeathByTower += RemoveAllModifiers;
         _onDeathByTower += _brickGenerator.OnBrickDestroyed;
-
-        _startFallSpeed = _fallSpeed;
     }
     private void OnDestroy()
     {
@@ -138,6 +155,11 @@ public class BrickBar : MonoBehaviour
 
         TickModifiers(dt);
 
+        if (_speedDirty)
+        {
+            RecalculateSpeed();
+            _speedDirty = false;
+        }
 
         if (pendingDeath)
             ResolveDeath();
@@ -176,29 +198,29 @@ public class BrickBar : MonoBehaviour
         foreach (var kvp in _statuses)
         {
             var status = kvp.Value;
+            //Damage effect timer
+            //if (status.type == STATUSTYPE.STUN)
+            //{
+            //    _fallSpeed = 0;
+            //}
+            //else
+            //{
+            //    // DOT tick
+            //    status.remainingEffectTime -= dt;
+            //    if (status.remainingEffectTime <= 0)
+            //    {
+            //        status.remainingEffectTime = status.timeBeforeEffect;
+            //        OnDamage(status.stacks * status.damagePerStack); //total stack * stack/dmg
+            //    }
+            //}
 
-            if(status.type == StatusType.STUN)
-            {
-                _fallSpeed = 0;
-            }
-            else
-            {
-                // DOT tick
-                _tickTimer += dt;
-                if (_tickTimer >= 1f)
-                {
-                    _tickTimer -= 1f;
-                    OnDamage(status.stacks * status.damagePerStack);
-                }
-            }
-
-            // Stack effect timer
-            status.remainingEffectTime -= dt;
-
-            if (status.remainingEffectTime <= 0f)
+            // Stack timer
+            status.remainingStackTime -= dt;
+            if (status.remainingStackTime <= 0f)
             {
                 status.stacks--;
-                print("Stack: " + status.stacks);
+                if (status.affectsSpeed)
+                    MarkSpeedDirty();
 
                 if (status.stacks <= 0)
                 {
@@ -207,18 +229,32 @@ public class BrickBar : MonoBehaviour
                 else
                 {
                     // Restart decay timer for next stack
-                    status.remainingEffectTime = status.effectDuration;
+                    status.remainingStackTime = status.stackLifeTime;
+                }
+
+                status._ability.ActivateAbility();
+            }
+            if(status.stacks >0)
+            {
+                //Effect timer
+                status.remainingEffectTime -= dt;
+                if (status.remainingEffectTime <= 0)
+                {
+                    status.remainingEffectTime = status.timeBeforeEffect;
+                    print("TotalDmg via stack" + status.stacks * status.damagePerStack);
+                    OnDamage(status.stacks * status.damagePerStack); //total stack * stack/dmg
                 }
             }
+            
         }
 
         //remove all completed status effect
         foreach (var key in toRemove)
         {
-            if (key == StatusType.STUN)
-            {
-                _fallSpeed = _startFallSpeed;
-            }
+            //if (key == STATUSTYPE.STUN)
+            //{
+            //    _fallSpeed = _startFallSpeed;
+            //}
             _statuses.Remove(key);
         }
     }
@@ -235,29 +271,56 @@ public class BrickBar : MonoBehaviour
         if (modified <= 0)
             return;
 
-        print("DAMAGE: " + modified);
 
         _health -= modified;
-        UpdateColourByHealth();
-
         for (int i = 0; i < _modifiers.Count; i++)
             _modifiers[i]?.OnDamageApplied(modified);
 
-        if (_health <= 0)
+        UpdateBrickAfterDamage(deathcause);
+    }
+    public void OnDamageLayer(int amount, DeathCause deathcause = DeathCause.NORMAL)
+    {
+        _layer -= amount;
+        if (_layer > 0)
+        {
+            SetBrick(_brickHealthStats[_layer]);
+        }
+        else
         {
             pendingDeathCause = deathcause;
             pendingDeath = true;
         }
+    }
+
+    void UpdateBrickAfterDamage(DeathCause deathcause = DeathCause.NORMAL)
+    {
+        if (_health <= 0)
+        {
+            _AnimCurveEffect.PlayEffect(_onDeathAnimEffect, this.gameObject);
+            if (_layer >0 )
+            {
+                _layer--;
+                SetBrick(_brickHealthStats[_layer]);
+            }
+            else
+            {
+                pendingDeathCause = deathcause;
+                pendingDeath = true;
+            }
+        }
         else
         {
-            AudioManager.Instance.PlayOneShot(FmodEvent.Instance.sfx_brickHit, transform.position);
+            _AnimCurveEffect.PlayEffect(_onDamageAnimEffect, this.gameObject);
+            _damageParticle.Play();
         }
+        _brickUI.SetLayerHealthFillAmount(_startingHealth,_health);
+        AudioManager.Instance.PlayOneShot(FmodEvent.Instance.sfx_brickHit, transform.position);
     }
 
     void HandleDeath()
     {
-        GlobalFeedbackManager.Instance.SetSizeCapForBrickDestroy();
-        GlobalFeedbackManager.Instance.PlayGlobalFeedback?.Invoke();
+       GlobalFeedbackManager.Instance.SetSizeCapForBrickDestroy();
+       GlobalFeedbackManager.Instance.PlayGlobalFeedback?.Invoke();
 
         abilityManager.NotifyBrickDestroyed(this);
         _brickPool.RemoveActiveBrick(this.gameObject);
@@ -299,77 +362,89 @@ public class BrickBar : MonoBehaviour
         }
     }
 
-    public void ApplyStatus(SOStatusEffect _statusEffect)
+    public void ApplyStatus(AbilityContext _statusEffect)
     {
-        //check if status already exist2
-        if (_statuses.Count > 0)
+        //check if status already exist
+        if (_statuses.TryGetValue(_statusEffect._statusType, out StatusInstance existing))
         {
-            foreach (StatusType st in _statuses.Keys)
+
+            if (existing.stacks >= (int)_statusEffect._Stats[STATID.MAX_STACKS])
+                existing.stacks = (int)_statusEffect._Stats[STATID.MAX_STACKS];
+            else
+                existing.stacks += (int)_statusEffect._Stats[STATID.STACKS_TO_ADD];
+
+            if(existing.resetStackLifeTimeUponHit)
             {
-                if (_statusEffect._statusType == st)
-                {
-                    _statuses[st].stacks += _statusEffect._stacksToAdd;
-                    if (_statuses[st].stacks > _statuses[st].maxStacks)
-                        _statuses[st].stacks = _statuses[st].maxStacks;
-
-                    print(gameObject.name + " Stack = " + _statuses[st].stacks);
-                    return;
-                }
+                existing.remainingStackTime = existing.stackLifeTime;
             }
-        }
 
-        StatusInstance status = new StatusInstance
-        {
-            type = _statusEffect._statusType,
-            stacks = 1,
-            maxStacks = _statusEffect._maxStacks,
-            damagePerStack = _statusEffect._damagePerStack,
-            effectDuration = _statusEffect._effectDuration,
-        };
+            if (existing.affectsSpeed)
+                MarkSpeedDirty();
 
-        _statuses.Add(_statusEffect._statusType, status);
 
-        // Increase stacks (cap at max)
-        status.stacks = Mathf.Min(
-            status.stacks + _statusEffect._stacksToAdd,
-            status.maxStacks
-        );
-
-        // Refresh decay timer on every hit
-        status.remainingEffectTime = status.effectDuration;
-
-        print(gameObject.name + " :new status added");
-        print(status.stacks + " :stack");
-
-    }
-    public void ChangeSpiteColour(Color color)
-    {
-        for(int i=0; i< _spritesRenderer.Count; i++)
-            _spritesRenderer[i].color = color;
-    }
-    void UpdateColourByHealth()
-    {
-        if (_brickGenerator == null)
             return;
+        }
+        else
+        {
+            StatusInstance sinst = new StatusInstance
+            {
+                _ability = _statusEffect._abililty,
+                type = _statusEffect._statusType,
+                stacks = (int)_statusEffect._Stats[STATID.STACKS_TO_ADD],
+                maxStacks = (int)_statusEffect._Stats[STATID.MAX_STACKS],
+                damagePerStack = (int)_statusEffect._Stats[STATID.DAMAGE_PER_STACK],
+                stackLifeTime = (int)_statusEffect._Stats[STATID.STACK_LIFETIME],
+                remainingStackTime = (int)_statusEffect._Stats[STATID.STACK_LIFETIME],
+                timeBeforeEffect = (int)_statusEffect._Stats[STATID.TIME_BEFORE_EFFECT_ACTIVATE],
+                remainingEffectTime = (int)_statusEffect._Stats[STATID.TIME_BEFORE_EFFECT_ACTIVATE],
+                resetStackLifeTimeUponHit = _statusEffect._Statsbool[STATID.RESET_STACK_TIMER],
+                spawnPrefab = _statusEffect._spawnPrefab,
+                affectsSpeed = _statusEffect._Statsbool[STATID.AFFECTS_SPEED],
+                speedMultiplier = _statusEffect._Stats[STATID.SPEED_MULTIPLIER]
+            };
 
-        SO_BrickHealthStats stats = _brickGenerator.GetStatsForHealth(_health);
-        if (stats != null)
-            ChangeSpiteColour(stats._color);
 
+            _statuses.Add(_statusEffect._statusType, sinst);
+            if (sinst.affectsSpeed)
+                MarkSpeedDirty();
+        }
     }
     public void SetBrick(SO_BrickHealthStats _stats)
     {
         _startingHealth = _stats._health;
         _health = _stats._health;
+        _baseFallSpeed = _stats._dropSpeed;
         _fallSpeed = _stats._dropSpeed;
-        ChangeSpiteColour(_stats._color);
+        _layer = _stats._layerNumber;
+        _brickUI.SetCurrentLayer(_layer);
+        _brickUI.PrepBrickLayerColour(_layer);
     }
 
+    void MarkSpeedDirty() => _speedDirty = true;
+
+
+    public void RecalculateSpeed()
+    {
+        float speedMultiplier = 0;
+
+        foreach (var kvp in _statuses)
+        {
+            var status = kvp.Value;
+
+            if (!status.affectsSpeed)
+                continue;
+
+            for (int i = 0; i < status.stacks; i++)
+            {
+                speedMultiplier += status.speedMultiplier;
+            }
+        }
+        _fallSpeed = _baseFallSpeed * (1 - speedMultiplier);
+    }
     //MODIFIERS
     public BrickModifierBase AddModifier(BrickModifierBase modifierPrefab)
     {
         if (modifierPrefab == null) return null;
-
         // instantiate as child of the brick (could come from a pool)
         var instance = Instantiate(modifierPrefab, transform.position, Quaternion.identity);
         instance.transform.SetParent(transform, false);
@@ -403,6 +478,5 @@ public class BrickBar : MonoBehaviour
             if (m != null) m.Tick(dt);
         }
     }
-    public void Heal(int amount) => _health = Mathf.Min(_health + amount, _startingHealth);
     public int GetHealth() => _health;
 }

@@ -12,8 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e1d20ab7e30da544a9ec93b36ccba40, type: 3}
   m_Name: BrickFormation_Lvl1_04
   m_EditorClassIdentifier: Assembly-CSharp::SOBrickFormation
-  formation: '1011001
-
-    1011001
-
-    1011001'
+  formation: 1011001

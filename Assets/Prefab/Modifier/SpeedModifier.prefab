@@ -44,4 +44,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c68a811fb0cfd3c4cb7f5784ecd0248c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpeedModifier
-  _speedModifier: 5
+  _speedModifier: 1

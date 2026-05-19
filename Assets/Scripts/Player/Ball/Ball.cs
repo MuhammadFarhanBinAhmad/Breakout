@@ -6,9 +6,13 @@ public class Ball : MonoBehaviour
 {
     internal Rigidbody2D _rigidbody;
     SpriteRenderer _spriteRenderer;
+    CircleCollider2D _circleCollider;
+    [SerializeField]ParticleSystem _particleSystem;
+    [SerializeField] TrailRenderer _trailRenderer;
     AbilityManager _abilityManager;
     BrickPool _brickPool;
     BallFeedbackManager _ballFeedbackManager;
+    BallDirectionArrow _ballDirectionArrow;
 
     public float _gravityScale;
     public float _maxVelocity;
@@ -16,6 +20,8 @@ public class Ball : MonoBehaviour
     public Action OnBallHit;
     public Action OnBallReset;
     public Action OnBallDestroy;//For copy
+
+    public Action OnBallRediect;
 
     public Action OnBrickHit;
 
@@ -26,6 +32,10 @@ public class Ball : MonoBehaviour
     [Header("Respawn")]
     public float _respawnTime;
     public Transform _respawnPos;
+    [SerializeField] float _launchSpeed;
+    bool _awaitingLaunch = true;
+    public bool IsAwaitingLaunch => _awaitingLaunch;
+    [SerializeField] ParticleSystem _reviveParticle;
 
     [Header("Damage")]
     [SerializeField] int _baseDamage;
@@ -47,9 +57,9 @@ public class Ball : MonoBehaviour
     public float _delayTimeAfterHit;
     public float _currentDelayTime;
     [Range(0f, 1f)]
-    [SerializeField] float _homingStrength = 0.08f;
-    [SerializeField] float _minVerticalForHoming = 0.25f;
-    [SerializeField] float _homingMaxDistance = 12f;
+    [SerializeField] float _homingStrength;
+    [SerializeField] float _minVerticalForHoming;
+    [SerializeField] float _homingMaxDistance;
 
     [Header("AimingState")]
     [SerializeField] float _lerpSpeed;
@@ -61,7 +71,8 @@ public class Ball : MonoBehaviour
     float _currentTargetTimeScale;
     float _currentCoolDownPeriod;
     Coroutine _timeScaleRoutine;
-    bool _onAimingState;
+    [SerializeField] bool _onAimingState;
+    [SerializeField] ParticleSystem _shotParticle;
 
     [Header("ManaBar")]
     [SerializeField] float _maxManaAmount;
@@ -85,9 +96,11 @@ public class Ball : MonoBehaviour
     {
         _rigidbody = GetComponent<Rigidbody2D>();
         _spriteRenderer = GetComponent<SpriteRenderer>();
+        _circleCollider = GetComponent<CircleCollider2D>();
         _abilityManager = FindAnyObjectByType<AbilityManager>();
         _brickPool = FindAnyObjectByType<BrickPool>();
         _ballFeedbackManager = FindAnyObjectByType<BallFeedbackManager>();
+        _ballDirectionArrow = FindAnyObjectByType<BallDirectionArrow>();
 
         OnBrickHit += IncreaseCombo;
         OnBrickHit += _ballFeedbackManager.UpdateGlowIntensity;
@@ -98,14 +111,17 @@ public class Ball : MonoBehaviour
 
         OnBallDestroy += DestroyCopyBall;
         OnBallDestroy += PlayBallDestroyAudio;
+
+        OnBallRediect += RedirectBallToMouse;
     }
     private void Start()
     {
-        // initial downward velocity - preserve your original intent
-        _rigidbody.linearVelocity = Vector2.down * _gravityScale;
-
         _startingScale = transform.localScale;
         _currentManaAmount = _maxManaAmount;
+        _ballDirectionArrow.SetEnableArrow(true);
+
+        PrepareForLaunch(_respawnPos.position);
+        StartCoroutine(AnimateBallRespawn());
     }
     private void OnDisable()
     {
@@ -118,10 +134,15 @@ public class Ball : MonoBehaviour
 
         OnBallDestroy -= DestroyCopyBall;
         OnBallDestroy -= PlayBallDestroyAudio;
+
+        OnBallRediect -= RedirectBallToMouse;
     }
 
     private void FixedUpdate()
     {
+        if (_awaitingLaunch)
+            return;
+
         if (pushLockTimer > 0f)
             pushLockTimer = Mathf.Max(0f, pushLockTimer - Time.fixedDeltaTime);
 
@@ -142,21 +163,29 @@ public class Ball : MonoBehaviour
     {
         if (Input.GetMouseButton(1) && _currentCoolDownPeriod >= _coolDownPeriod) // holding
         {
+            if (!_onAimingState)
+                AudioManager.Instance.PlayOneShot(FmodEvent.Instance.sfx_onBallSlowmo, transform.position);
+
             _onAimingState = true;
             _targetTimeScale = _slowMotionTimeValue;
+            _ballDirectionArrow.SetEnableArrow(_onAimingState);
+
+            if (_onAimingState && Input.GetMouseButton(0))
+                OnBallRediect?.Invoke();
         }
         else // released
         {
             _onAimingState = false;
             _targetTimeScale = 1f;
+            _ballDirectionArrow.SetEnableArrow(_onAimingState);
             if (_currentCoolDownPeriod < _coolDownPeriod)
                 _currentCoolDownPeriod += Time.deltaTime;
         }
+        
         _currentTimeScale = Mathf.Lerp(_currentTimeScale, _targetTimeScale, Time.unscaledDeltaTime * _lerpSpeed);
         TimeManager.SetCustomTimeScale(_currentTimeScale);
 
-        if (_onAimingState && Input.GetMouseButton(0))
-            RedirectBallToMouse();
+
     }
     void HandleManaRegen()
     {
@@ -195,14 +224,52 @@ public class Ball : MonoBehaviour
             speed = _gravityScale;
 
         _rigidbody.linearVelocity = direction * speed;
-
         transform.up = -direction;
 
+        PlayBallRedirectEffect();
+
+
         _currentCoolDownPeriod = 0;
+        StartCoroutine(AnimateBallRespawn());
         MinusMana(_manaShootCost);
+
+        AudioManager.Instance.PlayOneShot(FmodEvent.Instance.sfx_onBallShoot, transform.position);
+
     }
+    void PlayBallRedirectEffect()
+    {
+        if (_shotParticle == null) return;
+
+        if (_gameCamera == null)
+            _gameCamera = Camera.main;
+
+        if (_gameCamera == null) return;
+
+        Vector3 mouseScreen = Input.mousePosition;
+        mouseScreen.z = -_gameCamera.transform.position.z;
+
+        Vector2 mouseWorld = _gameCamera.ScreenToWorldPoint(mouseScreen);
+        Vector2 direction = mouseWorld - (Vector2)transform.position;
+
+        if (direction.sqrMagnitude < 0.0001f)
+            return;
+
+        // Convert direction → angle
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+
+        // Create rotation (Z-axis for 2D)
+        Quaternion rotation = Quaternion.Euler(angle, -90, -90);
+
+        _shotParticle.transform.rotation = rotation;
+
+        _shotParticle.Play();
+    }
+
     void ApplyHoming()
     {
+        if (_awaitingLaunch) return;
+        if (_brickPool == null) return;
+
         // basic sanity checks
         if (_brickPool == null) return;
 
@@ -234,11 +301,39 @@ public class Ball : MonoBehaviour
     public void ResetPosition()
     {
         _spriteRenderer.enabled = false;
+        _trailRenderer.enabled = false;
+        _circleCollider.enabled = false;
+        _particleSystem.gameObject.SetActive(true);
         _abilityManager.NotifyBallDestroyed(this);
         ResetCombo();
         StartCoroutine(ResettingBall());
+        _ballDirectionArrow.SetEnableArrow(true);
+    }
+    public void PrepareForLaunch(Vector3 position)
+    {
+        transform.position = position;
+        _rigidbody.linearVelocity = Vector2.zero;
+        _rigidbody.angularVelocity = 0f;
+        _rigidbody.bodyType = RigidbodyType2D.Kinematic;
+        _awaitingLaunch = true;
     }
 
+    public void Launch(Vector2 direction)
+    {
+        if (direction.sqrMagnitude < 0.0001f)
+            return;
+
+        direction.Normalize();
+
+        _rigidbody.bodyType = RigidbodyType2D.Dynamic;
+        _rigidbody.linearVelocity = direction * _launchSpeed;
+        transform.up = -direction;
+
+        _awaitingLaunch = false;
+        _ballDirectionArrow.SetEnableArrow(false);
+
+        AudioManager.Instance.PlayOneShot(FmodEvent.Instance.sfx_onBallShoot, transform.position);
+    }
     public void DestroyCopyBall()
     {
         _abilityManager.NotifyBallDestroyed(this);
@@ -248,15 +343,20 @@ public class Ball : MonoBehaviour
     IEnumerator ResettingBall()
     {
         yield return new WaitForSeconds(_respawnTime);
+
         AudioManager.Instance.PlayOneShot(FmodEvent.Instance.sfx_onBallRespawn, transform.position);
-        transform.position = _respawnPos.position;
-        StartCoroutine(AnimateBallRespawn());
+
         _spriteRenderer.enabled = true;
-        _rigidbody.linearVelocity = Vector2.down * _gravityScale;
+        _trailRenderer.Clear();
+        _trailRenderer.enabled = true;
+        _circleCollider.enabled = true;
+        StartCoroutine(AnimateBallRespawn());
+        PrepareForLaunch(_respawnPos.position);
     }
 
     IEnumerator AnimateBallRespawn()
     {
+        _reviveParticle.Play();
         Vector3 startScale = Vector3.zero;
         Vector3 targetScale = _startingScale * _capscaleMultiplier;
 
@@ -295,6 +395,9 @@ public class Ball : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D other)
     {
+        if (_awaitingLaunch)
+            return;
+
         if (other.gameObject.CompareTag("Wall") || other.gameObject.CompareTag("Paddle") || other.gameObject.CompareTag("Brick"))
         {
             GlobalFeedbackManager.Instance.SetSizeCapForBall();
@@ -365,11 +468,9 @@ public class Ball : MonoBehaviour
     }
     void MinusMana(int val)
     {
-        _currentManaAmount = -val;
+        _currentManaAmount -= val;
         if (_currentManaAmount < 0)
-        {
             _currentManaAmount = 0;
-        }
     }
     public void SetHomingValue(float value) => _homingStrength = value;
     public float GetCurrentManaAmount() => _currentManaAmount;

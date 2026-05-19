@@ -1,4 +1,7 @@
+using NUnit.Framework;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class TowerManager : MonoBehaviour
@@ -14,6 +17,7 @@ public class TowerManager : MonoBehaviour
     public int _essenceToPureEssenceConversionRate;
     public int _currentEssenceCount;
     internal int _currentPureEssence { get; private set; }
+    [SerializeField] ParticleSystem _onEssenceCollectParticle;
     public Action OnEssenceCollect;
 
     [Header("Essence scaling (milestones)")]
@@ -32,8 +36,13 @@ public class TowerManager : MonoBehaviour
 
     [Header("Layer")]
     public int _currentTowerHeight;
+    List<GameObject> _createdBricks = new List<GameObject>();
     public Action OnHeightIncrease;
-    
+    [Header("Floor Animation")]
+    [SerializeField] float _floorMoveDuration = 0.3f;
+    [SerializeField] AnimationCurve _floorMoveCurve;
+    Coroutine _moveRoutine;
+
     [Header("Dailycheck")]
     public TWEENTYPE _towerTweenType = TWEENTYPE.LINEAR;
     public Action _OnGameOver;
@@ -43,7 +52,6 @@ public class TowerManager : MonoBehaviour
     bool _receiveWarning;
 
     public Action OnReceivingWarning;
-
     public Action _onTowerTakingDamage;
 
     //cheatcode
@@ -94,12 +102,16 @@ public class TowerManager : MonoBehaviour
     public void IncreaseEssenceCount(int amt)
     {
         _currentEssenceCount += amt;
-
+        _onEssenceCollectParticle.Play();
         if (_currentEssenceCount >= _essenceToPureEssenceConversionRate)
         {
             _currentEssenceCount = 0;
             _currentBrickCount++;
             _currentPureEssence++;
+            GameObject brick = Instantiate(_collectedBrick);
+            Vector3 pos = new Vector2(transform.position.x + (transform.position.x / 2) + (_posOffset.x * _currentBrickCount), transform.position.y);
+            brick.transform.position = pos;
+            _createdBricks.Add(brick);
             AudioManager.Instance.PlayOneShot(FmodEvent.Instance.sfx_onBrickMade, transform.position);
         }
         OnEssenceCollect?.Invoke();
@@ -123,10 +135,6 @@ public class TowerManager : MonoBehaviour
 
             OnHeightIncrease?.Invoke();
         }
-
-        GameObject brick = Instantiate(_collectedBrick);
-        Vector3 pos = new Vector2(transform.position.x + (_posOffset.x * _currentBrickCount), transform.position.y);
-        brick.transform.position = pos;
     }
 
     void ApplyEssenceMilestoneIncrease()
@@ -157,7 +165,56 @@ public class TowerManager : MonoBehaviour
 
     void CreateNewFloor()
     {
-        transform.position = new Vector2(transform.position.x, transform.position.y - (_posOffset.y * _currentTowerHeight));
+        if (_moveRoutine != null)
+            StopCoroutine(_moveRoutine);
+
+        _moveRoutine = StartCoroutine(AnimateShiftDown());
+    }
+    IEnumerator AnimateShiftDown()
+    {
+        float time = 0f;
+
+        int count = _createdBricks.Count;
+
+        // store start + target positions
+        Vector3[] startPos = new Vector3[count];
+        Vector3[] targetPos = new Vector3[count];
+
+        float shiftAmount = _posOffset.y; // how much to move down per floor
+
+        for (int i = 0; i < count; i++)
+        {
+            if (_createdBricks[i] == null) continue;
+
+            startPos[i] = _createdBricks[i].transform.position;
+            targetPos[i] = startPos[i] - new Vector3(0f, shiftAmount, 0f);
+        }
+
+        while (time < _floorMoveDuration)
+        {
+            float t = time / _floorMoveDuration;
+            float curveT = _floorMoveCurve != null ? _floorMoveCurve.Evaluate(t) : t;
+
+            for (int i = 0; i < count; i++)
+            {
+                if (_createdBricks[i] == null) continue;
+
+                _createdBricks[i].transform.position =
+                    Vector3.Lerp(startPos[i], targetPos[i], curveT);
+            }
+
+            time += Time.deltaTime;
+            yield return null;
+        }
+
+        // snap to final
+        for (int i = 0; i < count; i++)
+        {
+            if (_createdBricks[i] == null) continue;
+            _createdBricks[i].transform.position = targetPos[i];
+        }
+
+        _moveRoutine = null;
     }
     public void EndOfDayCheck()
     {

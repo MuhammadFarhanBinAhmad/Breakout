@@ -1,20 +1,28 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
-using Unity.Mathematics;
-using Unity.VisualScripting;
 using UnityEngine;
-
 public enum BRICKLAYER
 {
     NONE,
     RED,
-    GREEN, 
+    GREEN,
     BLUE,
     ORANGE,
     PINK
 }
+
+public class PlannedBrick
+{
+    public SO_BrickHealthStats stats;
+    public Vector3 position;
+}
+public class WavePlan
+{
+    public List<PlannedBrick> bricks = new List<PlannedBrick>();
+    public int totalAPUsed;
+}
+
 
 
 [System.Serializable]
@@ -29,7 +37,6 @@ public class BrickGenerator : MonoBehaviour
 
     public List<BrickFormationEntry> _brickFormationList = new List<BrickFormationEntry>();
 
-    public List<BrickModifierBase> _brickModifier = new List<BrickModifierBase>();
     public List<SO_BrickHealthStats> _brickTypesList;
     public List<SO_BrickHealthStats> _brickAvailableToSpawn = new List<SO_BrickHealthStats>();
 
@@ -49,6 +56,8 @@ public class BrickGenerator : MonoBehaviour
     [SerializeField] float animationDuration;
     [SerializeField] float _capscaleMultiplier;
     Vector3 _startingScale = new Vector3(1,1,1);
+    [Header("BrickSpawn")]
+    [SerializeField] List<BrickModifierBase> _brickModifierList = new List<BrickModifierBase>();
 
     [Header("Level and Wave")]
     public List<int> _spawnedWaves = new List<int>();
@@ -146,7 +155,8 @@ public class BrickGenerator : MonoBehaviour
     void SetAPOfTheDay() => _APPerWaveForTheDay = _attributePoints[_timeManager.GetTotalDayPass()];
     void SpawnNextWave()
     {
-        StartCoroutine(SpawnFormation(GetBrickFormation()));
+        WavePlan plan = BuildWavePlan(GetBrickFormation());
+        StartCoroutine(ExecuteWavePlan(plan));
 
         if (_currentWave >= _brickFormationList[0].formations.Count - 1)
         {
@@ -159,58 +169,135 @@ public class BrickGenerator : MonoBehaviour
         }
     }
 
-    IEnumerator SpawnFormation(SOBrickFormation formation)
+    IEnumerator ExecuteWavePlan(WavePlan plan)
     {
-        _currentWaveAP = _APPerWaveForTheDay;
-        int x = 0;
-        int y = 0;
-
-        string test = "";
-        foreach (char c in formation.formation)
+        foreach (var p in plan.bricks)
         {
-            test += c;
-        }
+            GameObject brick = _brickPool.GetBrick();
+            _brickPool.PlaceActiveBrickInList(brick);
 
-        foreach (char c in formation.formation)
-        {
-            if (c == '0')
-            {
-                x++;
-                continue;
-            }
-            if (c == '1')
-            {
-                if (_currentWaveAP <= 0)
-                {
-                    break;
-                }
-                x++;
-                GameObject brick = _brickPool.GetBrick();
-                _brickPool.PlaceActiveBrickInList(brick);
-                BrickBar bb = brick.GetComponent<BrickBar>();
-                brick.transform.localScale = _startingScale;
-                brick.transform.position =
-                    transform.position +
-                    new Vector3(_offset.x * (x + 0.5f), _offset.y * (y + 0.5f));
+            BrickBar bb = brick.GetComponent<BrickBar>();
 
-                SetBrickStats(bb);
-                _brickCounter++;
-                StartCoroutine(AnimateBrickSpawn(brick.transform));
-                continue;
-            }
+            brick.transform.position = p.position;
+            brick.transform.localScale = _startingScale;
+            bb.SetBrick(p.stats);
+            bb.AddModifier(_brickModifierList[0]);
 
-            if (c == '\n')
-            {
-                y++;
-                x = 0;
-                yield return new WaitForSeconds(_timerBeforeNextLineSpawn);
+            _brickCounter++;
 
-            }
+            StartCoroutine(AnimateBrickSpawn(brick.transform));
+
+            yield return null; // optional pacing
         }
 
         yield return new WaitForSeconds(_timerBeforeNextWaveSpawn);
         _onSpawnNextWave?.Invoke();
     }
+    WavePlan BuildWavePlan(SOBrickFormation formation)
+    {
+        WavePlan plan = new WavePlan();
+
+        int ap = _APPerWaveForTheDay;
+        int x = 0;
+        int y = 0;
+
+        foreach (char c in formation.formation)
+        {
+            if (c == '\n')
+            {
+                y++;
+                x = 0;
+                continue;
+            }
+
+            if (c == '0')
+            {
+                x++;
+                continue;
+            }
+
+            if (c == '1')
+            {
+                x++;
+
+                var available = GetAffordableBricks(ap);
+
+                if (available.Count == 0)
+                    continue;
+
+                var stats = available[UnityEngine.Random.Range(0, available.Count)];
+
+                Vector3 pos =
+                    transform.position +
+                    new Vector3(_offset.x * (x + 0.5f), _offset.y * (y + 0.5f));
+
+                plan.bricks.Add(new PlannedBrick
+                {
+                    stats = stats,
+                    position = pos
+                });
+
+                ap -= stats._APValue;
+            }
+        }
+
+        plan.totalAPUsed = _APPerWaveForTheDay - ap;
+
+        return plan;
+    }
+    //IEnumerator SpawnFormation(SOBrickFormation formation)
+    //{
+    //    _currentWaveAP = _APPerWaveForTheDay;
+    //    int x = 0;
+    //    int y = 0;
+
+    //    string test = "";
+    //    foreach (char c in formation.formation)
+    //    {
+    //        test += c;
+    //    }
+
+    //    foreach (char c in formation.formation)
+    //    {
+    //        if (c == '0')
+    //        {
+    //            x++;
+    //            continue;
+    //        }
+    //        if (c == '1')
+    //        {
+    //            if (_currentWaveAP <= 0)
+    //            {
+    //                //end wave cause out of points
+    //                break;
+    //            }
+    //            x++;
+    //            GameObject brick = _brickPool.GetBrick();
+    //            _brickPool.PlaceActiveBrickInList(brick);
+    //            BrickBar bb = brick.GetComponent<BrickBar>();
+    //            brick.transform.localScale = _startingScale;
+    //            brick.transform.position =
+    //                transform.position +
+    //                new Vector3(_offset.x * (x + 0.5f), _offset.y * (y + 0.5f));
+
+    //            SetBrickStats(bb);
+    //            _brickCounter++;
+    //            StartCoroutine(AnimateBrickSpawn(brick.transform));
+    //            continue;
+    //        }
+
+    //        if (c == '\n')
+    //        {
+    //            y++;
+    //            x = 0;
+    //            yield return new WaitForSeconds(_timerBeforeNextLineSpawn);
+
+    //        }
+    //    }
+
+    //    yield return new WaitForSeconds(_timerBeforeNextWaveSpawn);
+    //    _onSpawnNextWave?.Invoke();
+    //}
     public void CheckBrickToAdd()
     {
         int day = _timeManager.GetTotalDayPass();
@@ -228,69 +315,69 @@ public class BrickGenerator : MonoBehaviour
             }
         }
     }
-    public SO_BrickHealthStats GetStatsForHealth(int currentHealth)
-    {
-        if (_brickTypesList == null || _brickTypesList.Count == 0)
-            return null;
+    //public SO_BrickHealthStats GetStatsForHealth(int currentHealth)
+    //{
+    //    if (_brickTypesList == null || _brickTypesList.Count == 0)
+    //        return null;
 
-        // Pick the highest health tier that is still <= currentHealth
-        SO_BrickHealthStats best = null;
+    //    // Pick the highest health tier that is still <= currentHealth
+    //    SO_BrickHealthStats best = null;
 
-        for (int i = 0; i < _brickTypesList.Count; i++)
-        {
-            var stats = _brickTypesList[i];
+    //    for (int i = 0; i < _brickTypesList.Count; i++)
+    //    {
+    //        var stats = _brickTypesList[i];
 
-            if (stats == null)
-                continue;
+    //        if (stats == null)
+    //            continue;
 
-            if (stats._health <= currentHealth)
-            {
-                if (best == null || stats._health > best._health)
-                    best = stats;
-            }
-        }
+    //        if (stats._health <= currentHealth)
+    //        {
+    //            if (best == null || stats._health > best._health)
+    //                best = stats;
+    //        }
+    //    }
 
-        // Fallback: if currentHealth is lower than all tiers, use the lowest one
-        if (best == null)
-        {
-            for (int i = 0; i < _brickTypesList.Count; i++)
-            {
-                var stats = _brickTypesList[i];
-                if (stats == null) continue;
+    //    // Fallback: if currentHealth is lower than all tiers, use the lowest one
+    //    if (best == null)
+    //    {
+    //        for (int i = 0; i < _brickTypesList.Count; i++)
+    //        {
+    //            var stats = _brickTypesList[i];
+    //            if (stats == null) continue;
 
-                if (best == null || stats._health < best._health)
-                    best = stats;
-            }
-        }
+    //            if (best == null || stats._health < best._health)
+    //                best = stats;
+    //        }
+    //    }
 
-        return best;
-    }
-    void SetBrickStats(BrickBar _bb)
-    {
-        List<SO_BrickHealthStats> bhs = new List<SO_BrickHealthStats>();
+    //    return best;
+    //}
+    //void SetBrickStats(BrickBar _bb)
+    //{
+    //    List<SO_BrickHealthStats> bhs = new List<SO_BrickHealthStats>();
 
-        // Collect affordable bricks
-        for (int i = 0; i < _brickAvailableToSpawn.Count; i++)
-        {
-            if (_brickAvailableToSpawn[i]._APValue <= _currentWaveAP)
-                bhs.Add(_brickAvailableToSpawn[i]);
-        }
+    //    // Collect affordable bricks
+    //    for (int i = 0; i < _brickAvailableToSpawn.Count; i++)
+    //    {
+    //        if (_brickAvailableToSpawn[i]._APValue <= _currentWaveAP)
+    //            bhs.Add(_brickAvailableToSpawn[i]);
+    //    }
 
-        // SAFETY CHECK
-        if (bhs.Count == 0)
-        {
-            return;
-        }
+    //    // SAFETY CHECK
+    //    if (bhs.Count == 0)
+    //    {
+    //        return;
+    //    }
 
 
-        int type = UnityEngine.Random.Range(0, bhs.Count);
-        SO_BrickHealthStats stats = bhs[type];
+    //    int type = UnityEngine.Random.Range(0, bhs.Count);
+    //    SO_BrickHealthStats stats = bhs[type];
 
-        _bb.SetBrick(stats);
-        //_bb.AddModifier(_brickModifier[0]);
+    //    _bb.SetBrick(stats);
+    //    //_bb.AddModifier(_brickModifier[0]);
 
-        _currentWaveAP -= stats._APValue;
-    }
+    //    _currentWaveAP -= stats._APValue;
+    //}
 
 
     IEnumerator AnimateBrickSpawn(Transform brickTransform)
@@ -313,5 +400,18 @@ public class BrickGenerator : MonoBehaviour
         }
 
         brickTransform.localScale = _startingScale;
+    }
+
+    List<SO_BrickHealthStats> GetAffordableBricks(int ap)
+    {
+        List<SO_BrickHealthStats> result = new List<SO_BrickHealthStats>();
+
+        for (int i = 0; i < _brickAvailableToSpawn.Count; i++)
+        {
+            if (_brickAvailableToSpawn[i]._APValue <= ap)
+                result.Add(_brickAvailableToSpawn[i]);
+        }
+
+        return result;
     }
 }

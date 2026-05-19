@@ -10,7 +10,7 @@ public class Consistency : ABSAbility
 
     public override void ModifyHit(HitContext ctx)
     {
-        ctx._baseDamage += (int)_baseDamageIncrease;
+        //ctx._damageValue += (int)_baseDamageIncrease;
     }
     public override void OnBallDestroy(Ball ball)
     {

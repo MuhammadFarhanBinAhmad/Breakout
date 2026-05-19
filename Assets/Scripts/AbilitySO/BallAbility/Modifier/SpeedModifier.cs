@@ -6,6 +6,7 @@ public class SpeedModifier : BrickModifierBase
     public override void Initialize(BrickBar brick)
     {
         base.Initialize(brick);
-        brick._fallSpeed += _speedModifier;
+        brick._baseFallSpeed += _speedModifier;
+        brick.RecalculateSpeed();
     }
 }

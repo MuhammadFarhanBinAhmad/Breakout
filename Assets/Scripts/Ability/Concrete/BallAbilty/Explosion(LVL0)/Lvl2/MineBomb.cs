@@ -50,11 +50,11 @@ public class MineBomb : MonoBehaviour
         {
             var ctx = new ExplosionContext
             {
-                _damage = _damage,
                 _source = gameObject,
                 _position = transform.position
             };
-            ed.Initialize(ctx);
+            ctx._Stats[STATID.BASE_DAMAGE] = _damage;
+            ed.Initialize(ctx,true);
         }
 
         gameObject.SetActive(false);

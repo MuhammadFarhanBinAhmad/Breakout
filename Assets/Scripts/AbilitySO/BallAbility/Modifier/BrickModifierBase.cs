@@ -4,7 +4,7 @@ using UnityEngine;
 public abstract class BrickModifierBase : MonoBehaviour, IBrickModifier
 {
     protected BrickBar _brick;
-
+    public int _modifierCost;
     public virtual void Initialize(BrickBar brick)
     {
         _brick = brick;

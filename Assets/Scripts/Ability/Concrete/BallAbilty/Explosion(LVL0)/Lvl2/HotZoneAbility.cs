@@ -15,7 +15,7 @@ public class HotZoneAbility : ABSAbility
 
         GameObject fireGO = _hotZonePool.GetObject();
         fireGO.transform.position = ctx._brick.transform.position;
-        fireGO.GetComponent<HotZoneArea>().SetStats(_SOAbilityEffect._statusDamage, _SOAbilityEffect._effectDuration);
+        fireGO.GetComponent<HotZoneArea>().SetStats(_SOAbilityEffect._damagePerStack, _SOAbilityEffect._stackLifeTime);
 
         HotZoneArea area = fireGO.GetComponent<HotZoneArea>();
 
